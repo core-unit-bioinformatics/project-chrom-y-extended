@@ -1,0 +1,10 @@
+{
+    "PE-P14s": {
+      "project_repo": "/home/ebertp/work/code/cubi/project-chrom-y-extended",
+      "local_hilbert_prefix": "/home/ebertp/mounts/hilbert/project"
+    },
+    "GENERIC": {
+      "remote_hilbert_prefix": "/gpfs/project",
+      "hilbert_verkko_assembly_folder": "projects/medbioinf/data/00_RESTRUCTURE/project-centric/hprc/assemblies/6807247E-4F71-45D8-AECE-9E5813BA1D9F--verkko-v2.2.1-release2_asms"
+    }
+}
