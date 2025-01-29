@@ -94,7 +94,7 @@ rule extract_sex_chromosome_sequence:
                         seq_composition["N"],
                     )
                 )
-                out_fasta..write(f">{new_name}\n{seq}\n")
+                out_fasta.write(f">{new_name}\n{seq}\n")
 
         with open(output.fasta, "w") as dump:
             _ = dump.write(out_fasta.getvalue())
@@ -112,6 +112,7 @@ rule extract_sex_chromosome_sequence:
         else:
             with open(output.table, "w"):
                 pass
+    # END OF RUN BLOCK
 
 
 rule run_extract_sex_chromosomes:
