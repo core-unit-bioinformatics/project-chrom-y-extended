@@ -1,5 +1,5 @@
-include: "../smk_load_configs.smk"
-include: "../smk_load_utils.smk"
+include: "../../smk_load_configs.smk"
+include: "../../smk_load_utils.smk"
 
 SAMPLE_SHEET = SAMPLE_SHEETS["vrk_assm"]
 
