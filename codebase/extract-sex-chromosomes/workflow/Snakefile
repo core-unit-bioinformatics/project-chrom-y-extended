@@ -85,6 +85,7 @@ rule extract_sex_chromosome_sequence:
                 out_table.append(
                     (
                         sample,
+                        wildcards.chrom,
                         seq_name,
                         new_name,
                         name_hash_id,
@@ -105,7 +106,7 @@ rule extract_sex_chromosome_sequence:
 
             table = pd.DataFrame.from_records(
                 out_table, columns=[
-                    "sample", "source_name", "name", "name_id",
+                    "sample", "chromosome", "source_name", "name", "name_id",
                     "seq_length", "num_A", "num_C", "num_G", "num_T", "num_N"
                 ]
             )
