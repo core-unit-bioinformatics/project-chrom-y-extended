@@ -51,9 +51,9 @@ rule extract_sex_chromosome_sequence:
                 seq_composition = col.Counter(seq)
                 seq_length = len(seq)
 
-                if seq_name in t2t_contigs:
+                if contig_name in t2t_contigs:
                     seq_contiguity = "CTG"
-                elif seq_name in t2t_scaffolds:
+                elif contig_name in t2t_scaffolds:
                     seq_contiguity = "SCF"
                 else:
                     seq_contiguity = "FRG"
