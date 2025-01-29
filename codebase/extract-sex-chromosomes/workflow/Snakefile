@@ -10,7 +10,7 @@ SAMPLES_HG = sorted(
 )
 
 MODULE_SUBFOLDER = SUBFOLDERS["extract-sex-chromosomes"]
-WD = MODULE_SUBFOLDER
+WD = pathlib.Path(MODULE_SUBFOLDER)
 
 
 rule extract_sex_chromosome_sequence:
