@@ -1,0 +1,14 @@
+name: smk_exec
+dependencies:
+  - python=3.11.*
+  - snakemake=8.27.*
+  - coincbc=2.10.*
+  - toml=0.10.*
+  - pyyaml=6.0.*
+  - dnaio=1.2.*
+  - xopen=2.0.*
+  - pbzip2=1.1.*
+  - py-bgzip=0.5.*
+  - pigz=2.8.*
+  - pandas=2.2.*
+  - numpy=2.2.*

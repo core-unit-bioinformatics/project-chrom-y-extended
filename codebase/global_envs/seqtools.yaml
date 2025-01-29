@@ -1,0 +1,6 @@
+name: seqtools
+dependencies:
+  - samtools=1.21.*
+  - htslib=1.21.*
+  - seqtk=1.4.*
+  - bedtools=2.31.*

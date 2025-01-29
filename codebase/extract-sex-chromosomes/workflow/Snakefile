@@ -1,0 +1,124 @@
+include: "../smk_load_configs.smk"
+include: "../smk_load_utils.smk"
+
+SAMPLE_SHEET = SAMPLE_SHEETS["vrk_assm"]
+
+SAMPLES = sorted(SAMPLE_SHEET.index.values)
+SAMPLES_HG = sorted(
+    f"{row.Index}-{row.hg_short}" for row in SAMPLE_SHEET.itertuples()
+    if row.hg_short != "UN"
+)
+
+MODULE_SUBFOLDER = SUBFOLDERS["extract-sex-chromosomes"]
+WD = MODULE_SUBFOLDER
+
+
+rule extract_sex_chromosome_sequence:
+    input:
+        fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample_hg, f"asm_{wildcards.hap}"),
+        t2t_ctg = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample_hg, f"t2t_ctg"),
+        t2t_scf = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample_hg, f"t2t_scf"),
+    output:
+        fasta = WD.joinpath("sequences/{sample_hg}/{sample_hg}.{hap}.{chrom}.fasta"),
+        table = WD.joinpath("stats/{sample_hg}/{sample_hg}.{hap}.{chrom}.info.tsv"),
+    resources:
+        mem_mb = lambda wildcards, attempt: 2048 * attempt
+    run:
+        import collections as col
+        import io
+        import re
+        import dnaio
+        import hashlib as hl
+
+        # NB: these two are not disjoint
+        t2t_contigs = read_set_listing(input.t2t_ctg)
+        t2t_scaffolds = read_set_listing(input.t2t_scf)
+
+        out_table = []
+        out_fasta = io.StringIO()
+        with dnaio.open(input.fasta) as haplotype:
+            for seq_record in haplotype:
+                seq_name = seq_record.name
+                if not seq_name.startswith(wildcards.chrom):
+                    continue
+                seq = seq_record.sequence.upper()
+                seq_composition = col.Counter(seq)
+                mobj = re.search("[0-9]+", seq_name)
+                assert mobj is not None
+                seq_number = seq_name[mobj.start():mobj.end()]
+                seq_number = f"SQN:{seq_number}"
+                seq_length = len(seq)
+
+                if seq_name in t2t_contigs:
+                    seq_contiguity = "CTG"
+                elif seq_name in t2t_scaffolds:
+                    seq_contiguity = "SCF"
+                else:
+                    seq_contiguity = "FRG"
+
+                if "pat" in seq_name:
+                    parent = "PAT"
+                elif "mat" in seq_name:
+                    parent = "MAT"
+                else:
+                    parent = "UNK"
+                    is_generic_hap1 = "haplotype1" in seq_name
+                    is_generic_hap2 = "haplotype2" in seq_name
+                    assert is_generic_hap1 or is_generic_hap2, seq_name
+
+                sample, haplogroup = wildcards.sample_hg.split("-")
+                new_name = "|".join(
+                    [
+                        wildcards.chrom,
+                        sample,
+                        haplogroup,
+                        parent,
+                        wildcards.hap,
+                        seq_number,
+                        seq_contiguity
+                    ]
+                )
+                name_hash_id = hl.md5(new_name.encode("utf-8")).hexdigest()
+                name_hash_id = name_hash_id[:8]
+                out_table.append(
+                    (
+                        sample,
+                        seq_name,
+                        new_name,
+                        name_hash_id,
+                        seq_length,
+                        seq_composition["A"],
+                        seq_composition["C"],
+                        seq_composition["G"],
+                        seq_composition["T"],
+                        seq_composition["N"],
+                    )
+                )
+                out_fasta..write(f">{new_name}\n{seq}\n")
+
+        with open(output.fasta, "w") as dump:
+            _ = dump.write(out_fasta.getvalue())
+
+        if out_table:
+
+            table = pd.DataFrame.from_records(
+                out_table, columns=[
+                    "sample", "source_name", "name", "name_id",
+                    "seq_length", "num_A", "num_C", "num_G", "num_T", "num_N"
+                ]
+            )
+            table.sort_values("seq_length", inplace=True, ascending=False)
+            table.to_csv(output.table, sep="\t", header=True, index=False)
+        else:
+            with open(output.table, "w"):
+                pass
+
+
+rule run_extract_sex_chromosomes:
+    input:
+        fasta = expand(
+            rules.extract_sex_chromosome_sequence.output.fasta,
+            sample_hg=SAMPLES_HG,
+            hap=["hap1", "hap2"],
+            chrom=["chrY", "chrX"]
+        )
