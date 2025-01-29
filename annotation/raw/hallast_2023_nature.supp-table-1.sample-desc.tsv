@@ -1,0 +1,44 @@
+AFR	HG01890	A0b	34	2	2	4	2	10	2	3	4
+AFR	HG02666	A1a	39	2	2	4	1; 2 copies detected from T2T annotation and blastn alignments	7	2	3	4
+AFR	HG19384	B2b1	37	2	2	4-fragmented	2	8	2-fragmented	3-fragmented	5
+AFR	NA19239	E1a2a1a1a	large TSPY cluster fragmented	2	2	4	2	11	2	3	4
+AFR	HG03248	E1a2b1a1a1	28	2	2	4	2	10	2	3	4
+AFR	HG02572	E1a2b1a2	28	2	2-fragmented	3-fragmented	2	7	2-fragmented	3	4
+AMR	HG01109	E1b1b1a1b1a	36	2	1-fragmented	4-fragmented	2	9	2	3-fragmented	4
+AMR	HG01106	E1b1b1b1a1	28	2	2	4-fragmented	2	7	2	3-fragmented	4
+AMR	HG01457	E1b1b1b2a1a4	34	2	2	4	2	8	2	3	4
+AFR	NA19331	E1b1b1b2b2a1	39	2	2	4-fragmented	2	7	2-fragmented	3	4
+AFR	HG03065	E1b1a1b1	large TSPY cluster fragmented	2	2	4-fragmented	2	fragmented	2	3-fragmented	fragmented
+AFR	HG02953	E1b1a1a1a2a1	36	2	2	4	2	8	2	3	4
+AFR	NA19705	E1b1a1a1a2a1a3b1a1	37	2	2	4	2	8	2	3	4
+AFR	HG02554	E1b1a1a1a2a1	37	2	2-fragmented	4-fragmented	2	8	2	3	4
+AFR	HG02717	E1b1a1a1a1c2c3a2a	37	2	2	4-fragmented	2	8	2	3-fragmented	4
+AFR	HG03471	E1b1a1a1a1c	32	2	2	4	2	8	2	3	4
+AFR	HG02011	E1b1a1a1a1c1b	37	2	2	4	2	8	2	3	4
+AFR	HG02486	E1b1a1a1a1c1a1a	35	2	1-fragmented	5-fragmented	2	8	2	3	4
+AFR	HG03371	E1b1a1a1a1c1a1a3c1b	36	2	2	4	2	8	2	3	4
+AFR	NA19317	E1b1a1a1a1c1a1a3a1	35	2	2	4	2	8	2	3	4
+AFR	NA19347	E1b1a1a1a1c1a1a3a1	35	2	2	4	2	8	2	3	4
+EAS	NA18989	C1a1a1a1a	32	2	2	5-fragmented	2	9	2	5	6
+AFR	HG03579	G2a2b2a1a1c1a1a2a1	33	2	2	4-fragmented	2	8	2-fragmented	3-fragmented	4
+SAS	HG03009	H1a1a4b2c1a1a	36	2	2	4-fragmented	2	6	2	2-fragmented	4
+SAS	HG02492	J2a1a1a2a2b	36	2	2	4	2	5	2	3	4
+AMR	HG01258	J1	large TSPY cluster fragmented	2	2	4-fragmented	2	6	2	3	4
+EUR	T2T-Y HG002	J1a2a1a2c1a1	46	2	2	4	2	6	2	3	4
+EUR	HG00358	N1a1a1a1a2a1a1a1a1a	23	2	2	3	2	10	1	1	2
+EAS	NA18534	O1b1a2b1a	31	2	2	4	2	8	2	3	4
+EAS	HG01596	O2a1b1a1a1a1c	33	2	2	4-fragmented	2	8	2	3	4
+EAS	HG00673	O2a2a1a1a	36	2	2	4-fragmented	2	9	2	3-fragmented	fragmented
+EAS	HG00512	O2a2b1a2a1a	34	2	2-fragmented	4-fragmented	2	8	2	3-fragmented	4
+EAS	HG00621	O2a2b1a1a1	37	2	2	4	2	6	2	3	4
+AMR	HG01928	Q1b1a1a	29	2	2	4-fragmented	2-fragmented	7	2	3	4
+AMR	HG01952	Q1b1a1a	28	2	2	4-fragmented	2	9	2	3-fragmented	4
+SAS	HG03732	R2	32	2	2	4-fragmented	2	6	2	3-fragmented	4
+SAS	HG03492	R1a1a1b2a1a2c	28	2	3-fragmented	4-fragmented	2	10	2-fragmented	3	4
+EUR	HG00096	R1b1a1b1a1a2c1a1f1a2	large TSPY cluster fragmented	2	2	4-fragmented	2	9	2-fragmented	3-fragmented	4
+EUR	HG01505	R1b1a1b1a1a2c1a4b2d1	29	2	2	4	2	9	2	3	4
+AMR	HG01243	R1b1a1b1a1a2a5	30	2	2	4-fragmented	2	10	2	3	4
+AMR	HG00731	R1b1a1b1a1a2a5	32	2	2	4-fragmented	1-fragmented; 0 copies detected from T2T annotation; 2 copies detected from blastn	7	2	3-fragmented	4
+EUR	NA20509	R1b1a1b1a1a2b1a1	30	2	2	4	2	9	2	3	4
+AMR	HG01358	R1b1a1b1a1a2b1a1	30	2	1-fragmented	3-fragmented	1-fragmented; 1copy detected on X chromosome; 0 copies detected from T2T; 2 copies detected from blastn alignments	9	2	3-fragmented	4
+AMR	NA19650	R1b1a1b1a1a2b1a1	30	2	2	4-fragmented	2	9	2	3	4
