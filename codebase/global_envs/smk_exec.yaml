@@ -2,6 +2,7 @@ name: smk_exec
 dependencies:
   - python=3.11.*
   - snakemake=8.27.*
+  - snakemake-executor-plugin-cluster-generic
   - coincbc=2.10.*
   - toml=0.10.*
   - pyyaml=6.0.*
