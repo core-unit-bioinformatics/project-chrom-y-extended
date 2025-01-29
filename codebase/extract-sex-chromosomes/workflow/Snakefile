@@ -43,12 +43,12 @@ rule extract_sex_chromosome_sequence:
                 if not seq_name.startswith(wildcards.chrom):
                     continue
                 contig_name = seq_name.split("_", 1)[1]
+                seq_number = contig_name.split("-")[-1]
+                assert re.match("^[0-9]+$", seq_number)
+                seq_number = f"SQN:{seq_number}"
+
                 seq = seq_record.sequence.upper()
                 seq_composition = col.Counter(seq)
-                mobj = re.search("[0-9]+", contig_name.split("-")[-1])
-                assert mobj is not None
-                seq_number = contig_name[mobj.start():mobj.end()]
-                seq_number = f"SQN:{seq_number}"
                 seq_length = len(seq)
 
                 if seq_name in t2t_contigs:
