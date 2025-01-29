@@ -42,9 +42,10 @@ rule extract_sex_chromosome_sequence:
                 seq_name = seq_record.name
                 if not seq_name.startswith(wildcards.chrom):
                     continue
+                contig_name = seq_name.split("_", 1)[1]
                 seq = seq_record.sequence.upper()
                 seq_composition = col.Counter(seq)
-                mobj = re.search("[0-9]+", seq_name)
+                mobj = re.search("[0-9]+", contig_name.split("-")[-1])
                 assert mobj is not None
                 seq_number = seq_name[mobj.start():mobj.end()]
                 seq_number = f"SQN:{seq_number}"
@@ -80,7 +81,7 @@ rule extract_sex_chromosome_sequence:
                     ]
                 )
                 name_hash_id = hl.md5(new_name.encode("utf-8")).hexdigest()
-                name_hash_id = name_hash_id[:8]
+                name_hash_id = name_hash_id.upper()[:8]
                 out_table.append(
                     (
                         sample,
