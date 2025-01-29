@@ -14,7 +14,7 @@ def find_project_repository_root(starting_point=None):
         starting_point = pathlib.Path(".").resolve()
 
     git_cmd = ["git", "rev-parse", "--show-toplevel"]
-    output = subprocess.check_output(git_cmd)
+    output = subprocess.check_output(git_cmd, cwd=starting_point)
     output = output.decode("utf-8").strip()
     repo_root = pathlib.Path(output).resolve(strict=True)
 
