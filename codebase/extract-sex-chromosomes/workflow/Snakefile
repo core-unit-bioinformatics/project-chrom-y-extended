@@ -28,6 +28,7 @@ rule extract_sex_chromosome_sequence:
         import io
         import re
         import dnaio
+        import pandas as pd
         import hashlib as hl
 
         # NB: these two are not disjoint
