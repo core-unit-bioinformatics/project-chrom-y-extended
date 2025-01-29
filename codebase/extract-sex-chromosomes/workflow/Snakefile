@@ -47,7 +47,7 @@ rule extract_sex_chromosome_sequence:
                 seq_composition = col.Counter(seq)
                 mobj = re.search("[0-9]+", contig_name.split("-")[-1])
                 assert mobj is not None
-                seq_number = seq_name[mobj.start():mobj.end()]
+                seq_number = contig_name[mobj.start():mobj.end()]
                 seq_number = f"SQN:{seq_number}"
                 seq_length = len(seq)
 
