@@ -1,2 +1,7 @@
-cfg_nb = pl.Path("load-config.ipynb").resolve(strict=True)
+cfg_nb = pl.Path("../../load-config.ipynb").resolve(strict=True)
 %run $cfg_nb
+
+_NB_SESSION = __session__
+NB_NAME = pl.Path(_NB_SESSION).name
+NB_PATH = pl.Path(_NB_SESSION).parent
+NB_REL_PATH = NB_PATH.relative_to(CONFIG["project_repo"]).joinpath(NB_NAME)
