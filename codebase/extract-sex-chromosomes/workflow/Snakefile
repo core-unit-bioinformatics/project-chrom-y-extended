@@ -6,7 +6,6 @@ SAMPLE_SHEET = SAMPLE_SHEETS["vrk_assm"]
 SAMPLES = sorted(SAMPLE_SHEET.index.values)
 SAMPLES_HG = sorted(
     f"{row.Index}-{row.hg_short}" for row in SAMPLE_SHEET.itertuples()
-    if row.hg_short != "UN"
 )
 
 MODULE_SUBFOLDER = SUBFOLDERS["extract-sex-chromosomes"]
@@ -118,6 +117,35 @@ rule extract_sex_chromosome_sequence:
     # END OF RUN BLOCK
 
 
+rule merge_sex_chromosome_stat_tables:
+    input:
+        tables = expand(
+            rules.extract_sex_chromosome_sequence.output.table,
+            sample_hg=SAMPLES_HG,
+            hap=["hap1", "hap2"],
+            chrom=["chrY", "chrX"]
+        )
+    output:
+        merged = WD.joinpath("summaries", "seq_rename_composition.tsv")
+    run:
+        import pandas as pd
+
+        header = None
+        rows = []
+        for table_file in input.tables:
+            with open(table_file, "r") as table:
+                header = table.readline().strip().split()
+                if len(header) == 0:
+                    continue
+                rows.append(
+                    tuple(table.readline().strip().split())
+                )
+        table = pd.DataFrame.from_records(rows, columns=header)
+        table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
+        table.to_csv(output.merged, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_extract_sex_chromosomes:
     input:
         fasta = expand(
@@ -125,4 +153,5 @@ rule run_extract_sex_chromosomes:
             sample_hg=SAMPLES_HG,
             hap=["hap1", "hap2"],
             chrom=["chrY", "chrX"]
-        )
+        ),
+        stats = rules.merge_sex_chromosome_stat_tables.output.merged
