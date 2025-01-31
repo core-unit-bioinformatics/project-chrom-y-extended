@@ -8,7 +8,9 @@ SAMPLES_HG = sorted(
     f"{row.Index}-{row.hg_short}" for row in SAMPLE_SHEET.itertuples()
 )
 
-MODULE_SUBFOLDER = SUBFOLDERS["extract-sex-chromosomes"]
+THIS_MODULE = "extract-sex-chromosomes"
+
+MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
 WD = pathlib.Path(MODULE_SUBFOLDER)
 
 
@@ -142,7 +144,10 @@ rule merge_sex_chromosome_stat_tables:
                 )
         table = pd.DataFrame.from_records(rows, columns=header)
         table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
-        table.to_csv(output.merged, sep="\t", header=True, index=False)
+        with open(output.merged, "w") as out:
+            _ = out.write(f"#{THIS_MODULE}\n")
+            _ = out.write(f"#{get_timestamp()}\n")
+            table.to_csv(out, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
