@@ -139,9 +139,10 @@ rule merge_sex_chromosome_stat_tables:
                 header = table.readline().strip().split()
                 if len(header) == 0:
                     continue
-                rows.append(
-                    tuple(table.readline().strip().split())
-                )
+                for line in table:
+                    rows.append(
+                        tuple(line.strip().split())
+                    )
         table = pd.DataFrame.from_records(rows, columns=header)
         table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
         with open(output.merged, "w") as out:
