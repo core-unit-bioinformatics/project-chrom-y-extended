@@ -144,12 +144,62 @@ rule merge_sex_chromosome_stat_tables:
                         tuple(line.strip().split())
                     )
         table = pd.DataFrame.from_records(rows, columns=header)
+        assert table["name_id"].nunique() == table.shape[0]
         table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
         with open(output.merged, "w") as out:
             _ = out.write(f"#{THIS_MODULE}\n")
             _ = out.write(f"#{get_timestamp()}\n")
             table.to_csv(out, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
+
+
+rule dump_autosomes:
+    input:
+        fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample_hg, f"asm_{wildcards.hap}"),
+        table = rules.merge_sex_chromosome_stat_tables.output.merged
+    output:
+        fasta = temp(
+            WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta"),
+        )
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * attempt
+    run:
+        import pandas as pd
+        import dnaio
+        import io
+
+        table = pd.read_csv(input.table, sep="\t", header=0, comment="#")
+        sample = wildcards.sample_hg.split("-")[0]
+        sample_set = table.loc[table["sample"] == sample, :].copy()
+        sex_seq_names = set(sample_set["source_name"].values)
+
+        buffer = io.StringIO()
+        with dnaio.open(input.fasta, "r") as fasta:
+            for record in fasta:
+                if record.name in sex_seq_names:
+                    continue
+                buffer.write(f">{record.name}\n{record.sequence.upper()}\n")
+
+        with open(output.fasta, "w") as dump:
+            _ = dump.write(buffer.getvalue())
+    # END OF RUN BLOCK
+
+
+rule compress_autosomal_genome:
+    input:
+        fasta = rules.dump_autosomes.output.fasta
+    output:
+        fagz = WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta.gz"),
+        fai = WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta.gz.fai")
+    conda:
+        "../../global_envs/seqtools.smk"
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bgzip --keep --stdout --threads {threads} {input.fasta} > {output.fagz}"
+            " && "
+        "samtools faidx {output.fagz}"
 
 
 rule run_extract_sex_chromosomes:
@@ -160,4 +210,9 @@ rule run_extract_sex_chromosomes:
             hap=["hap1", "hap2"],
             chrom=["chrY", "chrX"]
         ),
-        stats = rules.merge_sex_chromosome_stat_tables.output.merged
+        stats = rules.merge_sex_chromosome_stat_tables.output.merged,
+        autosomes = expand(
+            rules.compress_autosomal_genome.output.fagz,
+            sample_hg=SAMPLES_HG,
+            hap=["hap1", "hap2"]
+        )
