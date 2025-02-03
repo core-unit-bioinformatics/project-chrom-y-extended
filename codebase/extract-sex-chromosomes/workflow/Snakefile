@@ -174,11 +174,14 @@ rule dump_autosomes:
         sex_seq_names = set(sample_set["source_name"].values)
 
         buffer = io.StringIO()
-        with dnaio.open(input.fasta, "r") as fasta:
+        skipped = 0
+        with dnaio.open(input.fasta) as fasta:
             for record in fasta:
                 if record.name in sex_seq_names:
+                    skipped += 1
                     continue
                 buffer.write(f">{record.name}\n{record.sequence.upper()}\n")
+        assert skipped > 0
 
         with open(output.fasta, "w") as dump:
             _ = dump.write(buffer.getvalue())
