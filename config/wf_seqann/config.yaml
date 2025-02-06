@@ -1,4 +1,7 @@
 
+run_repeatmasker: true
 repeatmasker_offline_setup: true
 repeatmasker_default_library_file: /gpfs/project/projects/medbioinf/data/references/repeatmasker_lib/20240911_Dfam-RepeatMasker.lib.gz
 repeatmasker_dfam_root_part_file: /gpfs/project/projects/medbioinf/data/references/repeatmasker_lib/20231113_dfam38-1_full.0.h5.gz
+
+
