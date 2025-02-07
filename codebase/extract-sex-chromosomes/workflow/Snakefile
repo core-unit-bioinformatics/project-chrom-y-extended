@@ -237,11 +237,11 @@ rule shorten_sex_chromosome_headers:
             with dnaio.open(input.fasta) as fasta:
                 for record in fasta:
                     seqname = record.name
-                    name_id = sample_set.loc[sample_set["name"] == seqname, "name_id"]
+                    name_id = sample_set.loc[sample_set["name"] == seqname, "name_id"].iloc[0]
                     assert isinstance(name_id, str)
                     short_name = f"{wildcards.chrom}_{wildcards.sample_hg}_{name_id}"
                     assert len(short_name) < 50  # repeatmasker
-                    buffer.write(f">{short_name}\{record.sequence}\n")
+                    buffer.write(f">{short_name}\n{record.sequence}\n")
             with open(output.fasta, "w") as dump:
                 _ = dump.write(buffer.getvalue())
     # END OF RUN BLOCK
