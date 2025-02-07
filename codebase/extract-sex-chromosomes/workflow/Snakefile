@@ -162,7 +162,7 @@ rule dump_autosomes:
             WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta"),
         )
     resources:
-        mem_mb=lambda wildcards, attempt: 4096 * attempt
+        mem_mb=lambda wildcards, attempt: 8192 * attempt
     run:
         import pandas as pd
         import dnaio
