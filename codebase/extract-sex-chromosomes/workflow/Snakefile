@@ -195,7 +195,7 @@ rule compress_autosomal_genome:
         fagz = WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta.gz"),
         fai = WD.joinpath("sequences/{sample_hg}/autosomes/{sample_hg}.{hap}.auto.fasta.gz.fai")
     conda:
-        "../../global_envs/seqtools.smk"
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
