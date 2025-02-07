@@ -1,7 +1,42 @@
 
+use_reference_container: false
+
 run_repeatmasker: true
 repeatmasker_offline_setup: true
 repeatmasker_default_library_file: /gpfs/project/projects/medbioinf/data/references/repeatmasker_lib/20240911_Dfam-RepeatMasker.lib.gz
 repeatmasker_dfam_root_part_file: /gpfs/project/projects/medbioinf/data/references/repeatmasker_lib/20231113_dfam38-1_full.0.h5.gz
 
 
+run_hmmer: true
+hmmer_motif_params:
+  DYZ18_Yq:
+    evalue_t: '1.60E-150'
+    score_t: 2100
+  DYZ19_Yq:
+    evalue_t: '1.60E-15'
+  DYZ1_Yq:
+    evalue_t: '1.60E-150'
+    score_t: 2500
+  DYZ2_Yq:
+    evalue_t: '1.60E-150'
+    scale_cpu: 2
+    scale_time: 4
+    score_t: 1700
+  DYZ3-prim_Ycentro:
+    evalue_t: '1.60E-15'
+    score_t: 90
+  DYZ3-sec_Ycentro:
+    evalue_t: '1.60E-150'
+    score_t: 1700
+  TSPY:
+    evalue_t: '1.60E-200'
+    scale_cpu: 4
+    scale_mem: 7
+    scale_time: 47
+    score_t: 1000
+  Yqhet_2k7bp:
+    evalue_t: '1.60E-200'
+    score_t: 1500
+  Yqhet_3k1bp:
+    evalue_t: '1.60E-200'
+    score_t: 1500
