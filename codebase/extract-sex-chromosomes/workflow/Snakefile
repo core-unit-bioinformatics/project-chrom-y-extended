@@ -205,6 +205,48 @@ rule compress_autosomal_genome:
         "samtools faidx {output.fagz}"
 
 
+rule shorten_sex_chromosome_headers:
+    """This rule exists only for old-school
+    tools such as RepeatMasker that cannot
+    handle arbitrary header names in the
+    input fasta files.
+    Shorten new names to
+    CHROM_SAMPLE-HG_SEQID
+    """
+    input:
+        fasta = rules.extract_sex_chromosome_sequence.output.fasta,
+        table = rules.merge_sex_chromosome_stat_tables.output.merged
+    output:
+        fasta = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.{hap}.{chrom}.fasta")
+    run:
+        import pandas as pd
+        import dnaio
+        import io
+
+        table = pd.read_csv(input.table, sep="\t", header=0, comment="#")
+        assert table["name_id"].nunique() == table.shape[0]
+        sample = wildcards.sample_hg.split("-")[0]
+        sample_set = table.loc[table["sample"] == sample, :].copy()
+        if wildcards.chrom not in sample_set["chromosome"].values:
+            with open(output.fasta, "w"):
+                pass
+            with open(output.fasta + ".EMPTY", "w"):
+                pass
+        else:
+            buffer = io.StringIO()
+            with dnaio.open(input.fasta) as fasta:
+                for record in fasta:
+                    seqname = record.name
+                    name_id = sample_set.loc[sample_set["name"] == seqname, "name_id"]
+                    assert isinstance(name_id, str)
+                    short_name = f"{wildcards.chrom}_{wildcards.sample_hg}_{name_id}"
+                    assert len(short_name) < 50  # repeatmasker
+                    buffer.write(f">{short_name}\{record.sequence}\n")
+            with open(output.fasta, "w") as dump:
+                _ = dump.write(buffer.getvalue())
+    # END OF RUN BLOCK
+
+
 rule run_extract_sex_chromosomes:
     input:
         fasta = expand(
@@ -217,5 +259,11 @@ rule run_extract_sex_chromosomes:
         autosomes = expand(
             rules.compress_autosomal_genome.output.fagz,
             sample_hg=SAMPLES_HG,
+            hap=["hap1", "hap2"]
+        ),
+        short_names = expand(
+            rules.shorten_sex_chromosome_headers.output.fasta,
+            sample_hg=SAMPLES_HG,
+            chrom=["chrY", "chrX"],
             hap=["hap1", "hap2"]
         )
