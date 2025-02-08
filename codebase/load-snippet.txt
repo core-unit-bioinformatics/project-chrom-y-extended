@@ -1,3 +1,5 @@
+import pathlib as pl
+
 cfg_nb = pl.Path("../../load-config.ipynb").resolve(strict=True)
 %run $cfg_nb
 
