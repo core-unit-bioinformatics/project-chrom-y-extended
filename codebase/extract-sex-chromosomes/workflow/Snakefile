@@ -222,12 +222,16 @@ rule shorten_sex_chromosome_headers:
         import pandas as pd
         import dnaio
         import io
+        import os
 
         table = pd.read_csv(input.table, sep="\t", header=0, comment="#")
         assert table["name_id"].nunique() == table.shape[0]
         sample = wildcards.sample_hg.split("-")[0]
         sample_set = table.loc[table["sample"] == sample, :].copy()
-        if wildcards.chrom not in sample_set["chromosome"].values:
+        # if the respective haplotype did not contain any assembled
+        # sequence for that chromosome, the input will be empty
+        file_size = os.stat(input.fasta).st_size
+        if file_size == 0:
             with open(output.fasta, "w"):
                 pass
             with open(output.fasta + ".EMPTY", "w"):
