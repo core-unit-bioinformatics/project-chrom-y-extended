@@ -28,15 +28,15 @@ hmmer_motif_params:
   DYZ3-sec_Ycentro:
     evalue_t: '1.60E-150'
     score_t: 1700
-  TSPY:
-    evalue_t: '1.60E-200'
-    scale_cpu: 4
-    scale_mem: 7
-    scale_time: 47
-    score_t: 1000
   Yqhet_2k7bp:
     evalue_t: '1.60E-200'
     score_t: 1500
   Yqhet_3k1bp:
     evalue_t: '1.60E-200'
     score_t: 1500
+#  TSPY:
+#    evalue_t: '1.60E-200'
+#    scale_cpu: 6
+#    scale_mem: 7
+#    scale_time: 47
+#    score_t: 1000
