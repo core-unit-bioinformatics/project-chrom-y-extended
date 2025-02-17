@@ -43,5 +43,5 @@ hmmer_motif_params:
 
 
 run_minimap_regiondb: true
-region_db:
+minimap_region_db:
   t2tv2-repeat-disjoin: HG002-Y_T2Tv2_regions_repeat-disjoin.fasta
