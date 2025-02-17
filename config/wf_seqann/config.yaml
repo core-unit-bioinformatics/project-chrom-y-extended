@@ -34,9 +34,14 @@ hmmer_motif_params:
   Yqhet_3k1bp:
     evalue_t: '1.60E-200'
     score_t: 1500
-#  TSPY:
-#    evalue_t: '1.60E-200'
-#    scale_cpu: 6
-#    scale_mem: 7
-#    scale_time: 47
-#    score_t: 1000
+  TSPY:
+    evalue_t: '1.60E-200'
+    scale_cpu: 6
+    scale_mem: 7
+    scale_time: 47
+    score_t: 1000
+
+
+run_minimap_regiondb: true
+region_db:
+  t2tv2-repeat-disjoin: HG002-Y_T2Tv2_regions_repeat-disjoin.fasta
