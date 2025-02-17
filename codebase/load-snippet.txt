@@ -7,3 +7,6 @@ _NB_SESSION = __session__
 NB_NAME = pl.Path(_NB_SESSION).name
 NB_PATH = pl.Path(_NB_SESSION).parent
 NB_REL_PATH = NB_PATH.relative_to(CONFIG["project_repo"]).joinpath(NB_NAME)
+
+PLOT_ROOT = CONFIG["plot_root"].joinpath(NB_PATH.stem)
+NB_CACHE_FOLDER = config["nb_cache_folder"]
