@@ -45,3 +45,13 @@ hmmer_motif_params:
 run_minimap_regiondb: true
 minimap_region_db:
   t2tv2-repeat-disjoin: HG002-Y_T2Tv2_regions_repeat-disjoin.fasta
+  hg38-repeat-disjoin: GRCh38-Y_regions_repeat-disjoin.fasta
+
+run_minimap_labelref: true
+minimap_labeled_references:
+  t2tv2-repeat-disjoin:
+    sequence: HG002-Y_T2Tv2_CP086569.2.fasta
+    labels: HG002-Y_T2Tv2_regions_repeat-disjoin.bed
+  hg38-repeat-disjoin:
+    sequence: GRCh38.p14_chrY_CM000686.2.fasta
+    labels: GRCh38-Y_regions_repeat-disjoin.bed
