@@ -23,3 +23,31 @@ Pandas(Index=83, chrom='chrY', start=26644163, end=27078488, name='84_other2', f
 Pandas(Index=84, chrom='chrY', start=27078488, end=56887902, name='85_HET', fasta_header='chrY_hg38_85_HET', size=29809414) N gap: 99.4%
 Pandas(Index=86, chrom='chrY', start=57217416, end=57227415, name='87_unlabeled', fasta_header='chrY_hg38_87_unlabeled', size=9999) N gap: 100.0%
 ```
+
+## Verkko assemblies - known issues
+
+1. sample `NA21093`: contig `haplotype2-0000204` was identified as Chromosome Y and assigned to the haplotype 1 FASTA w/o renaming:
+
+```
+$ zgrep -F haplotype2-0000204 NA21093.assembly.refOriented.haplotype1.fasta.gz
+>chrY_haplotype2-0000204
+```
+
+2. sample `NA19700`: several contigs identified as Chromosome Y in haplotype 2 w/o assigning them to the haplotype 1 FASTA:
+
+```
+haplotype1-0000009 0 54962076 chrY_haplotype1-0000009 104.563
+
+haplotype2-0000217 0 562410 chrY_haplotype2-0000217 126.671
+haplotype2-0000218 357424 0 chrY_haplotype2-0000218 118.864
+haplotype2-0000219 367032 0 chrY_haplotype2-0000219 105.449
+```
+
+```
+$ zgrep -F haplotype2-0000217 NA19700.assembly.refOriented.haplotype2.fasta.gz
+>chrY_haplotype2-0000217
+$ zgrep -F haplotype2-0000218 NA19700.assembly.refOriented.haplotype2.fasta.gz
+>chrY_haplotype2-0000218
+$ zgrep -F haplotype2-0000219 NA19700.assembly.refOriented.haplotype2.fasta.gz
+>chrY_haplotype2-0000219
+```
