@@ -136,7 +136,7 @@ rule compress_simplified_labeling:
         bed = WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.bed.gz")
     conda:
         GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
-    run:
+    shell:
         "bgzip -c {input.bed} > {output.bed}"
             " && "
         "tabix -p bed {output.bed}"
