@@ -1,3 +1,5 @@
+import itertools
+
 include: "../../smk_load_configs.smk"
 include: "../../smk_load_utils.smk"
 
@@ -78,7 +80,7 @@ def simplify_labels(row, shared_counter):
         new_set.add(new_label)
 
     new_set = sorted(new_set)
-    for combo in itt.combinations(new_set, 2):
+    for combo in itertools.combinations(new_set, 2):
         shared_counter[(combo, "bp")] += region_size
         shared_counter[(combo, "n")] += 1
     new_label = ",".join(new_set)
