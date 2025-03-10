@@ -1,4 +1,5 @@
 import pathlib
+import json
 import subprocess
 
 import pandas
@@ -46,11 +47,15 @@ PROJECT_REPO_ROOT = find_project_repository_root(config.get("cwd", None))
 GLOBAL_CONDA_ENVS = PROJECT_REPO_ROOT.joinpath("codebase", "global_envs").resolve(strict=True)
 
 SAMPLE_SHEETS = {
-    "vrk_assm": load_sample_sheet("verkko_assemblies", PROJECT_REPO_ROOT)
+    "vrk_assm": load_sample_sheet("verkko_assemblies", PROJECT_REPO_ROOT),
+    "vrk_chrom": load_sample_sheet("verkko_sex_chrom", PROJECT_REPO_ROOT)
 }
 
 SUBFOLDERS = {
-    "extract-sex-chromosomes": "00-extract"
+    "extract-sex-chromosomes": "00-extract",
+    "process-region-annotation": "10-process-regions"
 }
 
+PROJECT_CONFIG_JSON = PROJECT_REPO_ROOT.joinpath("codebase", "project-config.json").resolve(strict=True)
 
+PROJECT_CONFIG = json.load(open(PROJECT_CONFIG_JSON, "r"))

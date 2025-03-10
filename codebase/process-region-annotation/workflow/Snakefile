@@ -1,0 +1,150 @@
+include: "../../smk_load_configs.smk"
+include: "../../smk_load_utils.smk"
+
+SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrom"]
+
+SAMPLES = sorted(SAMPLE_SHEET.index.values)
+MALE_SAMPLES = sorted(
+    SAMPLE_SHEET.loc[SAMPLE_SHEET["sample_sex"] == "male", :].index.values
+)
+
+
+THIS_MODULE = "process-region-annotation"
+
+MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
+WD = pathlib.Path(MODULE_SUBFOLDER)
+
+WF_SEQANN_WD = pathlib.Path(
+    PROJECT_CONFIG["hilbert_prefix"],
+    PROJECT_CONFIG["hilbert_wf_seqann_folder"]
+)
+
+
+def find_sample_label_file(wildcards):
+
+    bedfile = list(
+        WF_SEQANN_WD.joinpath(
+            "results", "annotations", "combined",
+        ).glob(f"{wildcards.sample}.*.bed.gz")
+    )
+    assert len(bedfile) == 1
+    bedfile = bedfile[0]
+    return bedfile
+
+
+def find_fasta_index_file(wildcards):
+
+    faifile = list(
+        WF_SEQANN_WD.joinpath(
+            "proc", "05-prepare", "seqnorm",
+            f"{wildcards.sample}"
+        ).glob(f"{wildcards.sample}.*.fai")
+    )
+    assert len(faifile) == 1
+    faifile = faifile[0]
+    return faifile
+
+
+def load_sequence_info(fasta_index):
+
+    seqinfo = dict()
+    with open(fasta_index, "r") as fai:
+        for line in fai:
+            seqname, seqlength = line.strip().split()[:2]
+            seqinfo[seqname] = int(seqlength)
+    return seqinfo
+
+
+def simplify_labels(row, shared_counter):
+    region_size = row.end - row.start
+    new_set = set()
+    for label in row.iloc[3].split(","):
+        if label.startswith("chrY"):
+            new_label = label.split("_", 3)[-1]
+        elif "2k7bp" in label:
+            new_label = "HET2k7"
+        elif "3k1bp" in label:
+            new_label = "HET3k1"
+        elif label == "DYZ3-prim_Ycentro":
+            new_label = "DYZ3pri"
+        elif label == "DYZ3-sec_Ycentro":
+            new_label = "DYZ3sec"
+        elif label.endswith("_Yq"):
+            new_label = label.rsplit("_",1)[0]
+        else:
+            new_label = label.split("_", 1)[-1]
+        new_set.add(new_label)
+
+    new_set = sorted(new_set)
+    for combo in itt.combinations(new_set, 2):
+        shared_counter[(combo, "bp")] += region_size
+        shared_counter[(combo, "n")] += 1
+    new_label = ",".join(new_set)
+    return new_label
+
+
+rule simplify_region_labels:
+    input:
+        bed = find_sample_label_file,
+        fai = find_fasta_index_file
+    output:
+        bed = temp(
+            WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.bed")
+        ),
+        json = WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.shared.json")
+    run:
+        import collections as col
+        import itertools as itt
+        import json
+        import pandas as pd
+
+        shared_labels = col.Counter()
+        seq_info = load_sequence_info(input.fai)
+        regions = pd.read_csv(input.bed, sep="\t", header=0)
+        regions["label"] = regions.apply(
+            simplify_labels, axis=1, args=(shared_labels,)
+        )
+        regions.drop("name", axis=1, inplace=True)
+        missing_regions = []
+        for seqn, seql in seq_info.items():
+            if seqn in regions["#chrom"].values:
+                continue
+            missing_regions.append(
+                (seqn, 0, seql, "UNCERTAIN")
+            )
+        if missing_regions:
+            missing_regions = pd.DataFrame.from_records(
+                missing_regions,
+                columns=["#chrom", "start", "end", "label"]
+            )
+            regions = pd.concat(
+                [regions, missing_regions],
+                axis=0, ignore_index=False
+            )
+        regions.sort_values(["#chrom", "start"], inplace=True)
+        regions.to_csv(output.bed, sep="\t", header=True, index=False)
+
+        with open(output.json, "w") as dump:
+            json.dump(shared_labels, dump)
+    # END OF RUN BLOCK
+
+
+rule compress_simplified_labeling:
+    input:
+        bed = rules.simplify_region_labels.output.bed
+    output:
+        bed = WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.bed.gz")
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    run:
+        "bgzip -c {input.bed} > {output.bed}"
+            " && "
+        "tabix -p bed {output.bed}"
+
+
+rule run_all_simplify_labels:
+    input:
+        bed = expand(
+            rules.compress_simplified_labeling.output.bed,
+            sample=MALE_SAMPLES
+        )
