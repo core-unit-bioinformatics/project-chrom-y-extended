@@ -27,7 +27,7 @@ def find_sample_label_file(wildcards):
             "results", "annotations", "combined",
         ).glob(f"{wildcards.sample}.*.bed.gz")
     )
-    assert len(bedfile) == 1
+    assert len(bedfile) == 1, bedfile
     bedfile = bedfile[0]
     return bedfile
 
@@ -40,7 +40,7 @@ def find_fasta_index_file(wildcards):
             f"{wildcards.sample}"
         ).glob(f"{wildcards.sample}.*.fai")
     )
-    assert len(faifile) == 1
+    assert len(faifile) == 1, faifile
     faifile = faifile[0]
     return faifile
 
