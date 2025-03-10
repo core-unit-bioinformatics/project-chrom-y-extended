@@ -4,8 +4,10 @@ include: "../../smk_load_utils.smk"
 SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrom"]
 
 SAMPLES = sorted(SAMPLE_SHEET.index.values)
+select_male = SAMPLE_SHEET["sample_sex"] == "male"
+select_chrom_y = SAMPLE_SHEET.index.str.contains("chrY")
 MALE_SAMPLES = sorted(
-    SAMPLE_SHEET.loc[SAMPLE_SHEET["sample_sex"] == "male", :].index.values
+    SAMPLE_SHEET.loc[select_male & select_chrom_y, :].index.values
 )
 
 
@@ -17,7 +19,7 @@ WD = pathlib.Path(MODULE_SUBFOLDER)
 WF_SEQANN_WD = pathlib.Path(
     PROJECT_CONFIG["remote_hilbert_prefix"],
     PROJECT_CONFIG["hilbert_wf_seqann_folder"]
-)
+).resolve(strict=True)
 
 
 def find_sample_label_file(wildcards):
