@@ -95,11 +95,11 @@ rule simplify_region_labels:
         bed = temp(
             WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.bed")
         ),
-        json = WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.shared.json")
+        pkl = WD.joinpath("simplify_region_labels", "{sample}.simplified-labels.shared.pkl")
     run:
         import collections as col
         import itertools as itt
-        import json
+        import pickle
         import pandas as pd
 
         shared_labels = col.Counter()
@@ -128,8 +128,8 @@ rule simplify_region_labels:
         regions.sort_values(["#chrom", "start"], inplace=True)
         regions.to_csv(output.bed, sep="\t", header=True, index=False)
 
-        with open(output.json, "w") as dump:
-            json.dump(shared_labels, dump)
+        with open(output.pkl, "wb") as dump:
+            pkl.dump(shared_labels, dump)
     # END OF RUN BLOCK
 
 
