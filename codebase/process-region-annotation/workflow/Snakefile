@@ -15,7 +15,7 @@ MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
 WD = pathlib.Path(MODULE_SUBFOLDER)
 
 WF_SEQANN_WD = pathlib.Path(
-    PROJECT_CONFIG["hilbert_prefix"],
+    PROJECT_CONFIG["remote_hilbert_prefix"],
     PROJECT_CONFIG["hilbert_wf_seqann_folder"]
 )
 

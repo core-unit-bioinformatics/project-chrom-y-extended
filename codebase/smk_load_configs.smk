@@ -58,4 +58,4 @@ SUBFOLDERS = {
 
 PROJECT_CONFIG_JSON = PROJECT_REPO_ROOT.joinpath("codebase", "project-config.json").resolve(strict=True)
 
-PROJECT_CONFIG = json.load(open(PROJECT_CONFIG_JSON, "r"))
+PROJECT_CONFIG = json.load(open(PROJECT_CONFIG_JSON, "r"))["GENERIC"]
