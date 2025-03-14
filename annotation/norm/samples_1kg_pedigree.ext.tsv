@@ -1,4 +1,4 @@
-# 20250128T1725
+# 20250314T1110
 family_id	individual_id	paternal_id	maternal_id	gender	karyotype	phenotype	population	relationship	siblings	second_order	third_order	children	other_comments	phase_3_genotypes	related_genotypes	omni_genotypes	affy_genotypes
 HG00096	HG00096	0	0	1	male	0	GBR	unrel	0	0	0	0	0	1	0	1	1
 HG00097	HG00097	0	0	2	female	0	GBR	unrel	0	0	0	0	0	1	0	1	1
@@ -3692,5 +3692,7 @@ NA21141	NA21141	0	0	2	female	0	GIH	unrel	0	0	0	0	0	1	0	1	1
 NA21142	NA21142	0	0	2	female	0	GIH	unrel	0	0	0	0	0	1	0	1	1
 NA21143	NA21143	0	0	2	female	0	GIH	unrel	0	0	0	0	0	1	0	1	1
 NA21144	NA21144	0	0	2	female	0	GIH	unrel	0	0	0	0	0	1	0	1	1
+3140	NA24143	0	0	2	female	0	ASK	mother	0	0	0	0	0	0	0	0	0
+3140	NA24149	0	0	1	male	0	ASK	father	0	0	0	0	0	0	0	0	0
 3140	NA24385	NA24149	NA24143	1	male	0	ASK	child	0	0	0	0	0	0	0	0	0
 3150	NA24631	NA24694	NA24695	1	male	0	CHN	child	0	0	0	0	0	0	0	0	0
