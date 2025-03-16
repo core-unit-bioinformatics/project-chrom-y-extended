@@ -164,13 +164,13 @@ rule ref_align_extracted_sequences:
 
 rule merge_sex_chromosome_stat_tables:
     input:
-        tables = expand(
+        tables_hap = expand(
             rules.extract_sex_chromosome_sequence.output.table,
             sample_hg=SAMPLES_HG,
             hap=["hap1", "hap2"],
             chrom=["chrY", "chrX"]
         ),
-        tables = expand(
+        tables_un = expand(
             rules.extract_sex_chromosome_sequence.output.table,
             sample_hg=SAMPLES_HG,
             hap=["wg"],
@@ -183,7 +183,9 @@ rule merge_sex_chromosome_stat_tables:
 
         header = None
         rows = []
-        for table_file in input.tables:
+        input_tables = sorted(input.tables_hap)
+        input_tables.extend(sorted(input.tables_un))
+        for table_file in input_tables:
             with open(table_file, "r") as table:
                 header = table.readline().strip().split()
                 if len(header) == 0:
