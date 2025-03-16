@@ -80,7 +80,8 @@ rule extract_sex_chromosome_sequence:
                     parent = "UNK"
                     is_generic_hap1 = "haplotype1" in seq_name
                     is_generic_hap2 = "haplotype2" in seq_name
-                    assert is_generic_hap1 or is_generic_hap2, seq_name
+                    if wildcards.hap != "wg":
+                        assert is_generic_hap1 or is_generic_hap2, seq_name
 
                 sample, haplogroup = wildcards.sample_hg.split("-")
                 new_name = "|".join(
