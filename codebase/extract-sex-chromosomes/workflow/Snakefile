@@ -157,7 +157,7 @@ rule ref_align_extracted_sequences:
         script=GLOBAL_SCRIPTS.joinpath("normalizer", "normalize_paf.py")
     shell:
         "minimap2 -x asm20 --secondary=no -L --paf-no-hit --eqx "
-        "-t {threads} -o {output.paf}"
+        "-t {threads} -o {output.paf} {input.ref} {input.fasta}"
             " && "
         "{params.script} --input {output.paf} --output {output.tsv}"
 
