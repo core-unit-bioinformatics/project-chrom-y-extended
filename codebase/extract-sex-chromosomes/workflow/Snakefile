@@ -36,14 +36,27 @@ rule extract_sex_chromosome_sequence:
         t2t_contigs = read_set_listing(input.t2t_ctg)
         t2t_scaffolds = read_set_listing(input.t2t_scf)
 
+        def skip_seq(chromosome, seq_header):
+            if chromosome == "chrUn":
+                # hard coded assumption: 'chr' prefix
+                # if it exists, we skip
+                return seq_header.startswith("chr")
+            else:
+                # if header does not start with query chromosome,
+                # we skip that sequence
+                return not seq_header.startswith(chromosome)
+
         out_table = []
         out_fasta = io.StringIO()
         with dnaio.open(input.fasta) as haplotype:
             for seq_record in haplotype:
                 seq_name = seq_record.name
-                if not seq_name.startswith(wildcards.chrom):
+                if skip_seq(wildcards.chrom, seq_name):
                     continue
-                contig_name = seq_name.split("_", 1)[1]
+                if wildcards.chrom == "chrUn":
+                    contig_name = seq_name
+                else:
+                    contig_name = seq_name.split("_", 1)[1]
                 seq_number = contig_name.split("-")[-1]
                 assert re.match("^[0-9]+$", seq_number)
                 seq_number = f"SQN:{seq_number}"
@@ -119,6 +132,36 @@ rule extract_sex_chromosome_sequence:
     # END OF RUN BLOCK
 
 
+rule ref_align_extracted_sequences:
+    input:
+        fasta = rules.extract_sex_chromosome_sequence.output.fasta,
+        ref = lambda wildcards: WD.joinpath("references", "chm13v2.0.fa.gz")
+    output:
+        paf = WD.joinpath(
+            "ref_orient", "mm2_align",
+            "{sample_hg}",
+            "{sample_hg}.{hap}.{chrom}.ref-align.paf.gz"
+        ),
+        tsv = WD.joinpath(
+            "ref_orient", "mm2_align",
+            "{sample_hg}",
+            "{sample_hg}.{hap}.{chrom}.ref-align.norm-paf.tsv.gz"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
+    threads: 6
+    resources:
+        mem_mb=lambda wildcards, attempt: 24576 * attempt,
+        time_hrs=lambda wildcards, attempt: attempt * attempt
+    params:
+        script=GLOBAL_SCRIPTS.joinpath("normalizer", "normalize_paf.py")
+    shell:
+        "minimap2 -x asm20 --secondary=no -L --paf-no-hit --eqx "
+        "-t {threads} -o {output.paf}"
+            " && "
+        "{params.script} --input {output.paf} --output {output.tsv}"
+
+
 rule merge_sex_chromosome_stat_tables:
     input:
         tables = expand(
@@ -126,7 +169,13 @@ rule merge_sex_chromosome_stat_tables:
             sample_hg=SAMPLES_HG,
             hap=["hap1", "hap2"],
             chrom=["chrY", "chrX"]
-        )
+        ),
+        tables = expand(
+            rules.extract_sex_chromosome_sequence.output.table,
+            sample_hg=SAMPLES_HG,
+            hap=["wg"],
+            chrom=["chrUn"]
+        ),
     output:
         merged = WD.joinpath("summaries", "seq_rename_composition.tsv")
     run:
@@ -253,21 +302,39 @@ rule shorten_sex_chromosome_headers:
 
 rule run_extract_sex_chromosomes:
     input:
-        fasta = expand(
+        fasta_hap = expand(
             rules.extract_sex_chromosome_sequence.output.fasta,
             sample_hg=SAMPLES_HG,
             hap=["hap1", "hap2"],
             chrom=["chrY", "chrX"]
         ),
-        stats = rules.merge_sex_chromosome_stat_tables.output.merged,
-        autosomes = expand(
-            rules.compress_autosomal_genome.output.fagz,
+        fasta_un = expand(
+            rules.extract_sex_chromosome_sequence.output.fasta,
             sample_hg=SAMPLES_HG,
-            hap=["hap1", "hap2"]
+            hap=["wg"],
+            chrom=["chrUn"]
         ),
-        short_names = expand(
-            rules.shorten_sex_chromosome_headers.output.fasta,
+        tsv_hap = expand(
+            rules.ref_align_extracted_sequences.output.tsv,
             sample_hg=SAMPLES_HG,
-            chrom=["chrY", "chrX"],
-            hap=["hap1", "hap2"]
-        )
+            hap=["hap1", "hap2"],
+            chrom=["chrY", "chrX"]
+        ),
+        tsv_un = expand(
+            rules.ref_align_extracted_sequences.output.tsv,
+            sample_hg=SAMPLES_HG,
+            hap=["wg"],
+            chrom=["chrUn"]
+        ),
+        # stats = rules.merge_sex_chromosome_stat_tables.output.merged,
+        # autosomes = expand(
+        #     rules.compress_autosomal_genome.output.fagz,
+        #     sample_hg=SAMPLES_HG,
+        #     hap=["hap1", "hap2"]
+        # ),
+        # short_names = expand(
+        #     rules.shorten_sex_chromosome_headers.output.fasta,
+        #     sample_hg=SAMPLES_HG,
+        #     chrom=["chrY", "chrX"],
+        #     hap=["hap1", "hap2"]
+        # )

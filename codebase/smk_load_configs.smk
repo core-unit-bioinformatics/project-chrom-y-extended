@@ -45,6 +45,7 @@ def load_sample_sheet(sample_sheet_name, repo_root):
 PROJECT_REPO_ROOT = find_project_repository_root(config.get("cwd", None))
 
 GLOBAL_CONDA_ENVS = PROJECT_REPO_ROOT.joinpath("codebase", "global_envs").resolve(strict=True)
+GLOBAL_SCRIPTS = PROJECT_REPO_ROOT.joinpath("codebase", "global_scripts").resolve(strict=True)
 
 SAMPLE_SHEETS = {
     "vrk_assm": load_sample_sheet("verkko_assemblies", PROJECT_REPO_ROOT),
