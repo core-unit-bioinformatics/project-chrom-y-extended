@@ -314,7 +314,20 @@ rule reassign_sequences_by_chrom:
                         assert seq_info["chromosome"] == seq_info["top_hit"]
                         out_chrom = seq_info["top_hit"]
                     name_id = seq_info["name_id"]
-                    out_name = f"{out_chrom}_{wildcards.sample_hg}_{name_id}"
+                    # minor tweak for female samples just in case
+                    if wildcards.sample_hg.endswith("-XX"):
+                        long_seq_name = seq_info["name"]
+                        if "hap1" in long_seq_name:
+                            out_sample = wildcards.sample_hg.replace("-XX", "-XX1")
+                        elif "hap2" in long_seq_name:
+                            out_sample = wildcards.sample_hg.replace("-XX", "-XX2")
+                        elif "wg" in long_seq_name:
+                            out_sample = wildcards.sample_hg.replace("-XX", "-XX0")
+                        else:
+                            raise
+                        out_name = f"{out_chrom}_{out_sample}_{name_id}"
+                    else:
+                        out_name = f"{out_chrom}_{wildcards.sample_hg}_{name_id}"
                     assert len(out_name) < 50  # RepeatMasker
                     if out_chrom == "chrX":
                         buffer_x.write(f">{out_name}\n{out_seq}\n")
