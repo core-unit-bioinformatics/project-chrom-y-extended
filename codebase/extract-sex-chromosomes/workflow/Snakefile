@@ -335,7 +335,7 @@ rule reassign_sequences_by_chrom:
 rule merge_sex_chromosome_stat_tables:
     input:
         tables = expand(
-            rules.merge_annotation_hit_tables.output.table,
+            rules.merge_annotation_hit_tables.output.tsv,
             sample_hg=SAMPLES_HG,
         )
     output:
