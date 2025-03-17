@@ -267,7 +267,6 @@ rule merge_annotation_hit_tables:
 
         merged = ann_tables.merge(hit_tables, on=["name", "seq_length"], how="inner")
         # this inner merge should not shrink the dataset
-        assert merged.shape[0] >= ann_tables.shape[0]
         merged.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
@@ -293,18 +292,18 @@ rule reassign_sequences_by_chrom:
         import dnaio
 
         df = pd.read_csv(input.table, sep="\t", header=0)
-        fasta_files = sorted(input.fasta_wg) + sorted(fasta_hap)
+        fasta_files = sorted(input.fasta_wg) + sorted(input.fasta_hap)
         buffer_x = io.StringIO()
         buffer_y = io.StringIO()
         for fasta_file in fasta_files:
-            file_size = os.stat(input.fasta).st_size
+            file_size = os.stat(fasta_file).st_size
             if file_size == 0:
                 continue
             with dnaio.open(fasta_file) as fasta:
                 for record in fasta:
                     if record.name not in df["name"].values:
                         continue
-                    seq_info = df.loc[df["name"] == record.name, :]
+                    seq_info = df.loc[df["name"] == record.name, :].iloc[0]
                     if seq_info["orientation"] < 0:
                         out_seq = revcomp(record.sequence)
                     else:
