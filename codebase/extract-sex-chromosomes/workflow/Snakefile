@@ -175,12 +175,15 @@ rule identify_best_hit_extracted_sequence:
         )
     run:
         import pandas as pd
-        aln = pd.read_csv(input.tsv, sep="\t", header=0)
+        import pandas.errors as pderr
+
         out_header = [
             "name", "top_hit", "orientation", "seq_length",
             "top_matching_bp", "top_matching_pct"
         ]
-        if aln.empty:
+        try:
+            aln = pd.read_csv(input.tsv, sep="\t", header=0)
+        except pderr.EmptyDataError:
             with open(output.tsv, "w") as table:
                 table.write("\t".join(out_header) + "\n")
         else:
@@ -203,7 +206,6 @@ rule identify_best_hit_extracted_sequence:
             selected = pd.DataFrame.from_records(selected, columns=out_header)
             selected.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
-
 
 
 rule merge_sex_chromosome_stat_tables:
