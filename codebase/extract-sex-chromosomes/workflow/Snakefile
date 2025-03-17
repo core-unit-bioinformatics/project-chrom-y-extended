@@ -246,7 +246,7 @@ rule merge_annotation_hit_tables:
 
         def load_tables(table_files):
 
-            concat =
+            concat = []
             for table_file in table_files:
                 try:
                     df = pd.read_csv(table_file, sep="\t", header=0)
