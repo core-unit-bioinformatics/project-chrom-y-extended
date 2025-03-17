@@ -21,3 +21,25 @@ def get_sample_file(sample_sheet, sample, file_key):
 def get_timestamp():
     ts = dt.datetime.today().strftime("%Y%m%dT%H%M")
     return ts
+
+
+_REVCOMP_CHAR_MAP = {
+    "a": "t",
+    "c": "g",
+    "g": "c",
+    "t": "a",
+    "n": "n",
+    "A": "T",
+    "C": "G",
+    "G": "C",
+    "T": "A",
+    "N": "N"
+}
+
+_REVCOMP_TABLE = str.maketrans(_REVCOMP_CHAR_MAP)
+
+
+def revcomp(sequence):
+    return sequence.translate(_REVCOMP_TABLE)[::-1]
+
+assert revcomp("ACTTG") == "CAAGT"

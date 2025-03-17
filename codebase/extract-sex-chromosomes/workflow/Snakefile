@@ -208,39 +208,145 @@ rule identify_best_hit_extracted_sequence:
     # END OF RUN BLOCK
 
 
+localrules: merge_annotation_hit_tables
+rule merge_annotation_hit_tables:
+    input:
+        hap_hits = expand(
+            rules.identify_best_hit_extracted_sequence.output.tsv,
+            hap=["hap1", "hap2"],
+            chrom=["chrX", "chrY"],
+            allow_missing=True
+        ),
+        wg_hits = expand(
+            rules.identify_best_hit_extracted_sequence.output.tsv,
+            hap=["wg"],
+            chrom=["chrUn"],
+            allow_missing=True
+        ),
+        hap_ann = expand(
+            rules.extract_sex_chromosome_sequence.output.table,
+            hap=["hap1", "hap2"],
+            chrom=["chrX", "chrY"],
+            allow_missing=True
+        ),
+        wg_ann = expand(
+            rules.extract_sex_chromosome_sequence.output.table,
+            hap=["wg"],
+            chrom=["chrUn"],
+            allow_missing=True
+        )
+    output:
+        tsv = WD.joinpath(
+            "ref_orient", "annotated_hits",
+            "{sample_hg}.extract-aln-hit.tsv"
+        )
+    run:
+        import pandas as pd
+        import pandas.errors as pderr
+
+        def load_tables(table_files):
+
+            concat =
+            for table_file in table_files:
+                try:
+                    df = pd.read_csv(table_file, sep="\t", header=0)
+                    if df.empty:
+                        continue
+                    concat.append(df)
+                except pderr.EmptyDataError:
+                    continue
+            concat = pd.concat(concat, axis=0, ignore_index=False)
+            return concat
+
+        hit_tables = load_tables(
+            sorted(input.hap_hits) + sorted(input.wg_hits)
+        )
+        ann_tables = load_tables(
+            sorted(input.hap_ann) + sorted(input.wg_ann)
+        )
+
+        merged = ann_tables.merge(hit_tables, on=["name", "seq_length"], how="inner")
+        # this inner merge should not shrink the dataset
+        assert merged.shape[0] >= ann_tables.shape[0]
+        merged.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+rule reassign_sequences_by_chrom:
+    input:
+        fasta_wg = expand(
+            rules.extract_sex_chromosome_sequence.output.fasta,
+            hap=["wg"], chrom=["chrUn"], allow_missing=True
+        )
+        fasta_hap = expand(
+            rules.extract_sex_chromosome_sequence.output.fasta,
+            hap=["hap1", "hap2"], chrom=["chrX", "chrY"], allow_missing=True
+        )
+        table = rules.merge_annotation_hit_tables.output.tsv
+    output:
+        chrom_x = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrX.fasta"),
+        chrom_y = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrY.fasta"),
+    run:
+        import io
+        import os
+        import pandas as pd
+        import dnaio
+
+        df = pd.read_csv(input.table, sep="\t", header=0)
+        fasta_files = sorted(input.fasta_wg) + sorted(fasta_hap)
+        buffer_x = io.StringIO()
+        buffer_y = io.StringIO()
+        for fasta_file in fasta_files:
+            file_size = os.stat(input.fasta).st_size
+            if file_size == 0:
+                continue
+            with dnaio.open(fasta_file) as fasta:
+                for record in fasta:
+                    if record.name not in df["name"].values:
+                        continue
+                    seq_info = df.loc[df["name"] == record.name, :]
+                    if seq_info["orientation"] < 0:
+                        out_seq = revcomp(record.sequence)
+                    else:
+                        out_seq = record.sequence
+                    if seq_info["chromosome"] == "chrUn":
+                        out_chrom = seq_info["top_hit"]
+                    else:
+                        assert seq_info["chromosome"] == seq_info["top_hit"]
+                        out_chrom = seq_info["top_hit"]
+                    name_id = seq_info["name_id"]
+                    out_name = f"{out_chrom}_{wildcards.sample_hg}_{name_id}"
+                    assert len(out_name) < 50  # RepeatMasker
+                    if out_chrom == "chrX":
+                        buffer_x.write(f">{out_name}\n{out_seq}\n")
+                    elif out_chrom == "chrY":
+                        buffer_y.write(f">{out_name}\n{out_seq}\n")
+                    else:
+                        raise
+
+        with open(output.chrom_x, "w") as dump:
+            _ = dump.write(buffer_x.getvalue())
+
+        with open(output.chrom_y, "w") as dump:
+            _ = dump.write(buffer_y.getvalue())
+    # END OF RUN BLOCK
+
+
 rule merge_sex_chromosome_stat_tables:
     input:
-        tables_hap = expand(
-            rules.extract_sex_chromosome_sequence.output.table,
+        tables = expand(
+            rules.merge_annotation_hit_tables.output.table,
             sample_hg=SAMPLES_HG,
-            hap=["hap1", "hap2"],
-            chrom=["chrY", "chrX"]
-        ),
-        tables_un = expand(
-            rules.extract_sex_chromosome_sequence.output.table,
-            sample_hg=SAMPLES_HG,
-            hap=["wg"],
-            chrom=["chrUn"]
-        ),
+        )
     output:
         merged = WD.joinpath("summaries", "seq_rename_composition.tsv")
     run:
         import pandas as pd
 
-        header = None
-        rows = []
-        input_tables = sorted(input.tables_hap)
-        input_tables.extend(sorted(input.tables_un))
-        for table_file in input_tables:
-            with open(table_file, "r") as table:
-                header = table.readline().strip().split()
-                if len(header) == 0:
-                    continue
-                for line in table:
-                    rows.append(
-                        tuple(line.strip().split())
-                    )
-        table = pd.DataFrame.from_records(rows, columns=header)
+        concat = []
+        for table_file in input.tables:
+            concat.append(pd.read_csv(table_file, sep="\t", header=0))
+        table = pd.concat(concat, axis=0, ignore_index=False)
         assert table["name_id"].nunique() == table.shape[0]
         table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
         with open(output.merged, "w") as out:
@@ -249,6 +355,9 @@ rule merge_sex_chromosome_stat_tables:
             table.to_csv(out, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
+#####
+##### BELOW - not executed at the moment
+#####
 
 rule dump_autosomes:
     input:
@@ -316,6 +425,7 @@ rule shorten_sex_chromosome_headers:
     output:
         fasta = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.{hap}.{chrom}.fasta")
     run:
+        raise
         import pandas as pd
         import dnaio
         import io
@@ -386,7 +496,15 @@ rule run_extract_sex_chromosomes:
             hap=["wg"],
             chrom=["chrUn"]
         ),
-        # stats = rules.merge_sex_chromosome_stat_tables.output.merged,
+        stats = rules.merge_sex_chromosome_stat_tables.output.merged,
+        seqs_x = expand(
+            rules.reassign_sequences_by_chrom.output.chrom_x,
+            sample_hg=SAMPLES_HG,
+        ),
+        seqs_y = expand(
+            rules.reassign_sequences_by_chrom.output.chrom_y,
+            sample_hg=SAMPLES_HG,
+        )
         # autosomes = expand(
         #     rules.compress_autosomal_genome.output.fagz,
         #     sample_hg=SAMPLES_HG,
