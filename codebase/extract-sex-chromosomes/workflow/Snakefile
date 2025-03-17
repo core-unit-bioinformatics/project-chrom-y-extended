@@ -163,6 +163,49 @@ rule ref_align_extracted_sequences:
         "{params.script} --input {output.paf} --output {output.tsv}"
 
 
+localrules: identify_best_hit_extracted_sequence
+rule identify_best_hit_extracted_sequence:
+    input:
+        tsv = rules.ref_align_extracted_sequences.output.tsv
+    output:
+        tsv = WD.joinpath(
+            "ref_orient", "mm2_align",
+            "{sample_hg}",
+            "{sample_hg}.{hap}.{chrom}.ref-align.best-hit.tsv"
+        )
+    run:
+        import pandas as pd
+        aln = pd.read_csv(input.tsv, sep="\t", header=0)
+        out_header = [
+            "name", "top_hit", "orientation", "seq_length",
+            "top_matching_bp", "top_matching_pct"
+        ]
+        if aln.empty:
+            with open(output.tsv, "w") as table:
+                table.write("\t".join(out_header) + "\n")
+        else:
+            best_hit = aln.groupby(
+                ["query_name", "query_length", "target_name", "align_orient"]
+            )["align_matching"].sum().reset_index(drop=False)
+            selected = []
+            for query, aln_stats in best_hit.groupby("query_name"):
+                top_idx = aln_stats["align_matching"].idxmax()
+                top_chrom = aln_stats.loc[top_idx, "target_name"]
+                if top_chrom not in ["chrX", "chrY"]:
+                    continue
+                top_orient = aln_stats.loc[top_idx, "align_orient"]
+                top_matching = aln_stats.loc[top_idx, "align_matching"]
+                seq_length = aln_stats.loc[top_idx, "query_length"]
+                pct_matching = round(top_matching/seq_length * 100, 2)
+                selected.append(
+                    (query, top_chrom, top_orient, seq_length, top_matching, pct_matching)
+                )
+            selected = pd.DataFrame.from_records(selected, columns=out_header)
+            selected.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+
 rule merge_sex_chromosome_stat_tables:
     input:
         tables_hap = expand(
@@ -325,6 +368,18 @@ rule run_extract_sex_chromosomes:
         ),
         tsv_un = expand(
             rules.ref_align_extracted_sequences.output.tsv,
+            sample_hg=SAMPLES_HG,
+            hap=["wg"],
+            chrom=["chrUn"]
+        ),
+        best_hits_hap = expand(
+            rules.identify_best_hit_extracted_sequence.output.tsv,
+            sample_hg=SAMPLES_HG,
+            hap=["hap1", "hap2"],
+            chrom=["chrX", "chrY"]
+        ),
+        best_hits_wg = expand(
+            rules.identify_best_hit_extracted_sequence.output.tsv,
             sample_hg=SAMPLES_HG,
             hap=["wg"],
             chrom=["chrUn"]
