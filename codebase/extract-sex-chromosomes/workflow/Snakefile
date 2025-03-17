@@ -277,11 +277,11 @@ rule reassign_sequences_by_chrom:
         fasta_wg = expand(
             rules.extract_sex_chromosome_sequence.output.fasta,
             hap=["wg"], chrom=["chrUn"], allow_missing=True
-        )
+        ),
         fasta_hap = expand(
             rules.extract_sex_chromosome_sequence.output.fasta,
             hap=["hap1", "hap2"], chrom=["chrX", "chrY"], allow_missing=True
-        )
+        ),
         table = rules.merge_annotation_hit_tables.output.tsv
     output:
         chrom_x = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrX.fasta"),
