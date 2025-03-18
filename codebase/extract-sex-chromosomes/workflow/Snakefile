@@ -321,6 +321,26 @@ rule reassign_sequences_by_chrom:
                                 # female, we accept that here to make the rule complete
                                 # - exception is documented in central repo readme
                                 out_chrom = seq_info["chromosome"]
+                                print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
+                            elif wildcards.sample_hg.endswith("-XX"):
+                                # various other female samples (~13) with an unassigned
+                                # fragment (usually ~200k or so) mapping to PAR on Y.
+                                # Prioritizing logic over data-backed evidence here...
+                                # - manually setting required since 'chromosome' is chrUn
+                                # HG00735-XX.chrY
+                                # HG00423-XX.chrY
+                                # HG03816-XX.chrY
+                                # HG02841-XX.chrY
+                                # HG02922-XX.chrY
+                                # NA21106-XX.chrY
+                                # HG01784-XX.chrY
+                                # HG01175-XX.chrY
+                                # HG02165-XX.chrY
+                                # HG01969-XX.chrY
+                                # HG02257-XX.chrY
+                                # NA20282-XX.chrY
+                                out_chrom = "chrX"
+                                print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
                             else:
                                 raise
 
