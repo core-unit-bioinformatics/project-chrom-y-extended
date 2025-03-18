@@ -311,8 +311,19 @@ rule reassign_sequences_by_chrom:
                     if seq_info["chromosome"] == "chrUn":
                         out_chrom = seq_info["top_hit"]
                     else:
-                        assert seq_info["chromosome"] == seq_info["top_hit"]
-                        out_chrom = seq_info["top_hit"]
+                        try:
+                            assert seq_info["chromosome"] == seq_info["top_hit"]
+                            out_chrom = seq_info["top_hit"]
+                        except AssertionError:
+                            if wildcards.sample_hg in ["HG00423-XX", "HG03270-XX"]:
+                                # hard-coded exceptions - big chunk of (likely) PAR1
+                                # has best hit to chrY, but since both samples are
+                                # female, we accept that here to make the rule complete
+                                # - exception is documented in central repo readme
+                                out_chrom = seq_info["chromosome"]
+                            else:
+                                raise
+
                     name_id = seq_info["name_id"]
                     # minor tweak for female samples just in case
                     if wildcards.sample_hg.endswith("-XX"):

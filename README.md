@@ -51,3 +51,19 @@ $ zgrep -F haplotype2-0000218 NA19700.assembly.refOriented.haplotype2.fasta.gz
 $ zgrep -F haplotype2-0000219 NA19700.assembly.refOriented.haplotype2.fasta.gz
 >chrY_haplotype2-0000219
 ```
+
+3. sample HG03270 likely exhibits an assembly error in (one of) the PAR region; sample is female, but best hit in minimap alignments is to chrY
+    - see Snakefile `extract-sex-chromosomes::workflow::Snakefile::reassign_sequences_by_chrom`
+
+```
+sample  chromosome      source_name     name    name_id seq_length      num_A   num_C   num_G   num_T   num_N   top_hit orientation     top_matching_bp top_matching_pct
+HG03270 chrX    chrX_haplotype2-0000104 chrX|HG03270|XX|UNK|hap2|SQN:0000104|FRG        3C94FF6F        245047  67079   56689   54635   66644   0       chrY    1       201156  82.09
+```
+
+4. sample HG00423 likely exhibits an assembly error in (one of) the PAR region; sample is female, but best hit in minimap alignments is to chrY
+    - see Snakefile `extract-sex-chromosomes::workflow::Snakefile::reassign_sequences_by_chrom`
+
+```
+sample  chromosome      source_name     name    name_id seq_length      num_A   num_C   num_G   num_T   num_N   top_hit orientation     top_matching_bp top_matching_pct
+HG00423 chrX    chrX_haplotype1-0000026 chrX|HG00423|XX|UNK|hap1|SQN:0000026|FRG        D2ACC43B        211785  52863   53550   51223   54149   0       chrY    1       170003  80.27
+```
