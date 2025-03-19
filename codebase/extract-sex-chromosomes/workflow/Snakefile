@@ -310,6 +310,11 @@ rule reassign_sequences_by_chrom:
                         out_seq = record.sequence
                     if seq_info["chromosome"] == "chrUn":
                         out_chrom = seq_info["top_hit"]
+                        # same fix as below - force chrX for female samples
+                        if wildcards.sample_hg.endswith("-XX"):
+                            if out_chrom != "chrX":
+                                out_chrom = "chrX"
+                                print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
                     else:
                         try:
                             assert seq_info["chromosome"] == seq_info["top_hit"]
@@ -339,6 +344,7 @@ rule reassign_sequences_by_chrom:
                                 # HG01969-XX.chrY
                                 # HG02257-XX.chrY
                                 # NA20282-XX.chrY
+                                # HG00253-XX.chrY
                                 out_chrom = "chrX"
                                 print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
                             else:
