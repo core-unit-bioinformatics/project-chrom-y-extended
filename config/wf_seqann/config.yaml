@@ -17,7 +17,7 @@ hmmer_motif_params:
   DYZ1_Yq:
     evalue_t: '1.60E-150'
     score_t: 2500
-  DYZ2_Yq:
+  DYZ2_Con:
     evalue_t: '1.60E-150'
     scale_cpu: 2
     scale_time: 4
@@ -44,14 +44,14 @@ hmmer_motif_params:
 
 run_minimap_regiondb: true
 minimap_region_db:
-  t2tv2-repeat-disjoin: HG002-Y_T2Tv2_regions_repeat-disjoin.fasta
-  hg38-repeat-disjoin: GRCh38-Y_regions_repeat-disjoin.fasta
+  t2tv2-repeat-details: HG002-Y_T2Tv2_regions_repeat-details.fasta
+  hg38-repeat-details: GRCh38-Y_regions_repeat-details.fasta
 
 run_minimap_labelref: true
 minimap_labeled_references:
-  t2tv2-repeat-disjoin:
+  t2tv2-repeat-details:
     sequence: HG002-Y_T2Tv2_CP086569.2.fasta
-    labels: HG002-Y_T2Tv2_regions_repeat-disjoin.bed
-  hg38-repeat-disjoin:
+    labels: HG002-Y_T2Tv2_regions_repeat-details.bed
+  hg38-repeat-details:
     sequence: GRCh38.p14_chrY_CM000686.2.fasta
-    labels: GRCh38-Y_regions_repeat-disjoin.bed
+    labels: GRCh38-Y_regions_repeat-details.bed
