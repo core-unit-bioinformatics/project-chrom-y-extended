@@ -390,6 +390,8 @@ rule index_selected_sex_chrom_seqs:
         idx_y = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrY.fasta.fai")
     conda:
         GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
         "samtools faidx {input.chrom_x}"
             " && "
