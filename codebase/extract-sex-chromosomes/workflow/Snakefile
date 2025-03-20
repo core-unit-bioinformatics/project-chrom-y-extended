@@ -381,23 +381,68 @@ rule reassign_sequences_by_chrom:
     # END OF RUN BLOCK
 
 
+rule index_selected_sex_chrom_seqs:
+    input:
+        chrom_x = rules.reassign_sequences_by_chrom.output.chrom_x,
+        chrom_y = rules.reassign_sequences_by_chrom.output.chrom_y
+    output:
+        idx_x = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrX.fasta.fai"),
+        idx_y = WD.joinpath("seq_short_names/{sample_hg}/{sample_hg}.chrY.fasta.fai")
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
+    shell:
+        "samtools faidx {input.chrom_x}"
+            " && "
+        "samtools faidx {input.chrom_y}"
+
+
+localrules: merge_selected_fasta_index_files
+rule merge_selected_fasta_index_files:
+    input:
+        indices = expand(
+            rules.index_selected_sex_chrom_seqs.output,
+            sample_hg=SAMPLES_HG
+        )
+    output:
+        table = WD.joinpath("summaries", "selected_seqs.tsv")
+    run:
+        import pandas as pd
+
+        rows = []
+        for fai_file in sorted(input.indices):
+            with open(fai_file) as listing:
+                for line in listing:
+                    columns = line.strip().split()
+                    seq_name = columns[0]
+                    name_id = seq_name.split("_")[2]
+                    assigned_chrom = seq_name.split("_")[0]
+                    rows.append((name_id, assigned_chrom))
+        df = pd.DataFrame.from_records(rows, columns=["name_id", "assigned_chrom"])
+        df.sort_values("name_id", inplace=True)
+        df.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+localrules: merge_sex_chromosome_stat_tables
 rule merge_sex_chromosome_stat_tables:
     input:
         tables = expand(
             rules.merge_annotation_hit_tables.output.tsv,
             sample_hg=SAMPLES_HG,
-        )
+        ),
+        selected = rules.merge_selected_fasta_index_files.output.table
     output:
         merged = WD.joinpath("summaries", "seq_rename_composition.tsv")
     run:
         import pandas as pd
-
+        selected = pd.read_csv(input.selected, sep="\t", header=0)
         concat = []
         for table_file in input.tables:
             concat.append(pd.read_csv(table_file, sep="\t", header=0))
         table = pd.concat(concat, axis=0, ignore_index=False)
         assert table["name_id"].nunique() == table.shape[0]
         table.sort_values(["sample", "chromosome", "seq_length"], inplace=True, ascending=[True, True, False])
+        table = table.merge(selected, on="name_id", how="outer")
         with open(output.merged, "w") as out:
             _ = out.write(f"#{THIS_MODULE}\n")
             _ = out.write(f"#{get_timestamp()}\n")
