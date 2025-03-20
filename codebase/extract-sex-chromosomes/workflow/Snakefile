@@ -395,7 +395,11 @@ rule index_selected_sex_chrom_seqs:
     shell:
         "samtools faidx {input.chrom_x}"
             " && "
-        "samtools faidx {input.chrom_y}"
+        "if [ -s {input.chrom_y} ]; then "
+        "samtools faidx {input.chrom_y} "
+        "else "
+        "touch {output.idx_y} "
+        "fi"
 
 
 localrules: merge_selected_fasta_index_files
