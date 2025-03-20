@@ -424,7 +424,7 @@ rule merge_selected_fasta_index_files:
                     rows.append((name_id, assigned_chrom))
         df = pd.DataFrame.from_records(rows, columns=["name_id", "assigned_chrom"])
         df.sort_values("name_id", inplace=True)
-        df.to_csv(output.tsv, sep="\t", header=True, index=False)
+        df.to_csv(output.table, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
