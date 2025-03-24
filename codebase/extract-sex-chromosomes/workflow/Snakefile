@@ -38,13 +38,26 @@ rule extract_sex_chromosome_sequence:
 
         def skip_seq(chromosome, seq_header):
             if chromosome == "chrUn":
-                # hard coded assumption: 'chr' prefix
-                # if it exists, we skip
-                return seq_header.startswith("chr")
+                # 2025-03-24 fix --- some sequences were
+                # assigned to chromosomes (carry a 'chr' prefix)
+                # but are otherwise unphased and were not sorted
+                # into the respective hap1/hap2 output files.
+                # We need to check here if the sequence header
+                # contains the keyword 'unassigned'
+                is_unassigned = "unassigned" in seq_header
+                return not is_unassigned
             else:
-                # if header does not start with query chromosome,
-                # we skip that sequence
-                return not seq_header.startswith(chromosome)
+                # Important: this path is executed for the hap1/hap2
+                # FASTA files that do not contain the unassigned
+                # sequences.
+                # 2025-03-24 fix --- add all sequences not
+                # assigned to any chromosome to the output
+                has_chr_prefix = seq_header.startswith("chr")
+                has_chr_match = seq_header.startswith(chromosome)
+                if not has_chr_prefix:
+                    # not assigned to any chromosome, we keep / skip False
+                    return False
+                return not has_chr_match
 
         out_table = []
         out_fasta = io.StringIO()
@@ -56,7 +69,11 @@ rule extract_sex_chromosome_sequence:
                 if wildcards.chrom == "chrUn":
                     contig_name = seq_name
                 else:
-                    contig_name = seq_name.split("_", 1)[1]
+                    try:
+                        contig_name = seq_name.split("_", 1)[1]
+                    except IndexError:
+                        assert not seq_name.startswith("chr")
+                        contig_name = seq_name
                 seq_number = contig_name.split("-")[-1]
                 assert re.match("^[0-9]+$", seq_number)
                 seq_number = f"SQN:{seq_number}"
