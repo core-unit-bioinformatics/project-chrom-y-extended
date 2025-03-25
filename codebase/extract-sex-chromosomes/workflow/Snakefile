@@ -312,6 +312,7 @@ rule reassign_sequences_by_chrom:
         fasta_files = sorted(input.fasta_wg) + sorted(input.fasta_hap)
         buffer_x = io.StringIO()
         buffer_y = io.StringIO()
+        hard_debug_hg01934 = 0
         for fasta_file in fasta_files:
             file_size = os.stat(fasta_file).st_size
             if file_size == 0:
@@ -375,17 +376,31 @@ rule reassign_sequences_by_chrom:
                                     out_chrom = top_hit
                                 elif confident_mat and top_hit == "chrX":
                                     out_chrom = top_hit
-                                elif top_match_pct > 75:
+                                elif top_match_pct > 50:
                                     # potentially misassigned before,
-                                    # quite unambig. assignment now...
+                                    # opt for majority assignment now...
                                     out_chrom = top_hit
                                 else:
-                                    print(wildcards.sample_hg)
-                                    print(seq_name)
-                                    print("chrom ", seq_info["chromosome"])
-                                    print("top hit ", top_hit)
-                                    print("top match pct ", top_match_pct)
-                                    raise
+                                    # this case triggers exactly once for HG01934:
+                                    # chrX - haplotype2-0000091 - chrX|HG01934|R1|UNK|hap2|SQN:0000091|FRG chrY    1       2261    9.34
+                                    # chrY - haplotype2-0000091 - chrY|HG01934|R1|UNK|hap2|SQN:0000091|FRG chrY    1       2261    9.34
+                                    # likely garbage sequence, has identical best hit to X and Y
+                                    # and thus, no deduplication happened automatically in rule
+                                    # identify_best_hit_extracted_sequence
+                                    if wildcards.sample_hg == "HG01934-R1":
+                                        out_chrom = "chrX"  # phased as hap2
+                                        if hard_debug_hg01934 > 0:
+                                            print(f"Manual debug: skipping over duplicate: {seq_info}")
+                                            # manually skip over duplicate entry
+                                            continue
+                                        hard_debug_hg01934 += 1
+                                    else:
+                                        print(wildcards.sample_hg)
+                                        print(seq_name)
+                                        print("chrom ", seq_info["chromosome"])
+                                        print("top hit ", top_hit)
+                                        print("top match pct ", top_match_pct)
+                                        raise
 
                     name_id = seq_info["name_id"]
                     # minor tweak for female samples just in case
@@ -461,6 +476,7 @@ rule merge_selected_fasta_index_files:
                     rows.append((name_id, assigned_chrom))
         df = pd.DataFrame.from_records(rows, columns=["name_id", "assigned_chrom"])
         df.sort_values("name_id", inplace=True)
+        assert df["name_id"].nunique() == df.shape[0]
         df.to_csv(output.table, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
