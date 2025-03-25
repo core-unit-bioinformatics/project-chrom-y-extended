@@ -370,15 +370,21 @@ rule reassign_sequences_by_chrom:
                                 top_hit = seq_info["top_hit"]
                                 confident_pat = "hap1" in seq_name or "pat" in seq_name
                                 confident_mat = "hap2" in seq_name or "mat" in seq_name
+                                top_match_pct = float(seq_info["top_matching_pct"])
                                 if confident_pat and top_hit == "chrY":
                                     out_chrom = top_hit
                                 elif confident_mat and top_hit == "chrX":
+                                    out_chrom = top_hit
+                                elif top_match_pct > 75:
+                                    # potentially misassigned before,
+                                    # quite unambig. assignment now...
                                     out_chrom = top_hit
                                 else:
                                     print(wildcards.sample_hg)
                                     print(seq_name)
                                     print("chrom ", seq_info["chromosome"])
                                     print("top hit ", top_hit)
+                                    print("top match pct ", top_match_pct)
                                     raise
 
                     name_id = seq_info["name_id"]
