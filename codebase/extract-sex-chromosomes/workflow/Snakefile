@@ -365,12 +365,21 @@ rule reassign_sequences_by_chrom:
                                 out_chrom = "chrX"
                                 print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
                             else:
-                                chrom = seq_info["chromosome"]
+                                # same male samples with spurious alignments
+                                seq_name = seq_info["name"].lower()
                                 top_hit = seq_info["top_hit"]
-                                aerr.add_note(
-                                    f"sample {wildcards.sample_hg}: chrom {chrom} vs top hit {top_hit}"
-                                )
-                                raise
+                                confident_pat = "hap1" in seq_name or "pat" in seq_name
+                                confident_mat = "hap2" in seq_name or "mat" in seq_name
+                                if confident_pat and top_hit == "chrY":
+                                    out_chrom = top_hit
+                                elif confident_mat and top_hit == "chrX":
+                                    out_chrom = top_hit
+                                else:
+                                    print(wildcards.sample_hg)
+                                    print(seq_name)
+                                    print("chrom ", seq_info["chromosome"])
+                                    print("top hit ", top_hit)
+                                    raise
 
                     name_id = seq_info["name_id"]
                     # minor tweak for female samples just in case
