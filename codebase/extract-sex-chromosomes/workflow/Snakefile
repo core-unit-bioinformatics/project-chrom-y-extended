@@ -336,7 +336,7 @@ rule reassign_sequences_by_chrom:
                         try:
                             assert seq_info["chromosome"] == seq_info["top_hit"]
                             out_chrom = seq_info["top_hit"]
-                        except AssertionError:
+                        except AssertionError as aerr:
                             if wildcards.sample_hg in ["HG00423-XX", "HG03270-XX"]:
                                 # hard-coded exceptions - big chunk of (likely) PAR1
                                 # has best hit to chrY, but since both samples are
@@ -365,6 +365,11 @@ rule reassign_sequences_by_chrom:
                                 out_chrom = "chrX"
                                 print(f"forcing chromosome {out_chrom} for sample ", wildcards.sample_hg)
                             else:
+                                chrom = seq_info["chromosome"]
+                                top_hit = seq_info["top_hit"]
+                                aerr.add_note(
+                                    f"sample {wildcards.sample_hg}: chrom {chrom} vs top hit {top_hit}"
+                                )
                                 raise
 
                     name_id = seq_info["name_id"]
