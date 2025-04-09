@@ -1,4 +1,9 @@
-﻿sample	sample_sex	assembly_type	hg_short	haplogroup_ISOGG_v15.73	haplogroup_yHaplo_term_marker	Y_known_SVs_Teitz-2018	study_generation
+﻿# 2025-04-04
+# removed that line:
+# HG02300	male	vrk-hic	Q1	Q1b1a1a_father	M3	ref	2025
+# sample mislabeled as male in 1KG pedigree file;
+# added sample again as female to this table
+sample	sample_sex	assembly_type	hg_short	haplogroup_ISOGG_v15.73	haplogroup_yHaplo_term_marker	Y_known_SVs_Teitz-2018	study_generation
 HG00097	female	vrk-hic	XX	XX	NA	NA	2025
 HG00099	female	vrk-hic	XX	XX	NA	NA	2025
 HG00128	female	vrk-hic	XX	XX	NA	NA	2025
@@ -53,6 +58,7 @@ HG02257	female	vrk-hic	XX	XX	NA	NA	2025
 HG02273	female	vrk-hic	XX	XX	NA	NA	2025
 HG02280	female	vrk-hic	XX	XX	NA	NA	2025
 HG02293	female	vrk-hic	XX	XX	NA	NA	2025
+HG02300	female	vrk-hic	XX	XX	NA	NA	2025
 HG02451	female	vrk-hic	XX	XX	NA	NA	2025
 HG02523	female	vrk-thc	XX	XX	NA	NA	2025
 HG02559	female	vrk-thc	XX	XX	NA	NA	2025
@@ -155,7 +161,6 @@ HG02132	male	vrk-hic	Q1	Q1a1a	M120	NA	2025
 HG02135	male	vrk-thc	O2	O2a2a1a2a1b	F1863	NA	2025
 HG02145	male	vrk-hic	E1	E1b1a1a1a2a1	M4254	NA	2025
 HG02258	male	vrk-hic	E1	E1b1a1a1a2a1	M4254	NA	2025
-HG02300	male	vrk-hic	Q1	Q1b1a1a_father	M3	ref	2025
 HG02391	male	vrk-hic	O2	O2a2b1a1a1	F8	ref	2025
 HG02392	male	vrk-hic	O2	O2a1b2	SK1673	ref	2025
 HG02486	male	vrk-thc	E1	E1b1a1a1a1c1a1a_father	P252	ref	2023
