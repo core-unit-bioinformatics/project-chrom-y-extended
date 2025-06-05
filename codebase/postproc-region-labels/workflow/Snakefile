@@ -7,7 +7,7 @@ MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
 WD = pathlib.Path(MODULE_SUBFOLDER)
 
 SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie"]
-SAMPLES=SAMPLE_SHEET["sample"].values
+SAMPLES=SAMPLE_SHEET.index.values
 
 WF_SEQANN_WD = pathlib.Path(
     PROJECT_CONFIG["remote_hilbert_prefix"],
