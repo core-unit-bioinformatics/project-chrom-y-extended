@@ -1,0 +1,88 @@
+include: "../../smk_load_configs.smk"
+include: "../../smk_load_utils.smk"
+
+THIS_MODULE = "postproc-region-labels"
+
+MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
+WD = pathlib.Path(MODULE_SUBFOLDER)
+
+SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie"]
+SAMPLES=SAMPLE_SHEET["sample"].values
+
+WF_SEQANN_WD = pathlib.Path(
+    PROJECT_CONFIG["remote_hilbert_prefix"],
+    PROJECT_CONFIG["hilbert_wf_seqann_folder"]
+).resolve(strict=True)
+
+
+MODULE_REF_GENOMES = {
+    "t2tv2": "HG002-Y_T2Tv2_CP086569.2.fasta",
+    "hg38": "GRCh38.p14_chrY_CM000686.2.fasta"
+}
+
+
+rule merge_region_by_coord_and_name:
+    """The script first simplifies the region labels
+    and then merges them by overlap (default: 1 bp) and name
+    """
+    input:
+        sample_region_labels=lambda wildcards: WF_SEQANN_WD.joinpath(
+            "results", "annotations", "combined"
+        ).glob(f"{wildcards.sample}.*cmb-{wildcards.ref}.concat.bed.gz")
+    output:
+        bed_file = WD.joinpath(
+            "region_labels", "merged",
+            f"{sample}.{ref}.chrY-regions-merged.bed.gz"
+        )
+    conda:
+        DIR_GLOBAL_ENVS.joinpath()
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "merge_by_ovl_and_name.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --bed-in {input.sample_region_labels} "
+        "--merge-dist 1 --bed-out {output.bed_file}"
+
+
+rule extract_labeled_sequences:
+    input:
+        bed_file = rules.merge_region_by_coord_and_name,
+        fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample, "input_path")
+    output:
+        fasta = WD.joinpath(
+            "region_seqs", f"{sample}.{ref}.chrY-regions.fasta"
+        ),
+    conda:
+        DIR_GLOBAL_ENVS.joinpath("seqtools.yaml")
+    shell:
+        "bedtools getfasta -fi {input.fasta} -bed {input.bed_file} -name -fo {output.fasta}"
+
+
+rule ref_align_extracted_sequences:
+    input:
+        fasta = rules.extract_labeled_sequences.output.fasta,
+        ref = lambda wildcards: WD.joinpath("references", f"{MODULE_REF_GENOMES[wildcards.ref]}")
+    output:
+        paf = WD.joinpath(
+            "region_alignments",
+            f"{sample}.{ref}.chrY-regions-realigned.paf.gz"
+        )
+    conda:
+        DIR_GLOBAL_ENVS.joinpath("align_tools.yaml")
+    threads: 4
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * attempt,
+    shell:
+        "minimap2 -a -x asm20 --eqx -c -t {threads} -N 0 --secondary=no "
+        "{input.ref} {input.fasta} | gzip > {output.paf}"
+
+
+rule run_all_postproc_labels:
+    input:
+        pafs = expand(
+            rules.ref_align_extracted_sequences.output.paf,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )

@@ -49,12 +49,14 @@ GLOBAL_SCRIPTS = PROJECT_REPO_ROOT.joinpath("codebase", "global_scripts").resolv
 
 SAMPLE_SHEETS = {
     "vrk_assm": load_sample_sheet("verkko_assemblies", PROJECT_REPO_ROOT),
-    "vrk_chrom": load_sample_sheet("verkko_sex_chrom", PROJECT_REPO_ROOT)
+    "vrk_chrom": load_sample_sheet("verkko_sex_chrom", PROJECT_REPO_ROOT),
+    "vrk_chrY_arhie": load_sample_sheet("verkko_chrY_arhie-v2", PROJECT_REPO_ROOT)
 }
 
 SUBFOLDERS = {
     "extract-sex-chromosomes": "00-extract",
-    "process-region-annotation": "10-process-regions"
+    "process-region-annotation": "10-process-regions",
+    "postproc-region-labels": "20-postprocess-labels",
 }
 
 PROJECT_CONFIG_JSON = PROJECT_REPO_ROOT.joinpath("codebase", "project-config.json").resolve(strict=True)
