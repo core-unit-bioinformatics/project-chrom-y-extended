@@ -8,6 +8,7 @@ repeatmasker_dfam_root_part_file: /gpfs/project/projects/medbioinf/data/referenc
 
 
 run_hmmer: true
+use_hmmer_in_label_combination: false
 hmmer_motif_params:
   DYZ18_Yq:
     evalue_t: '1.60E-150'
@@ -43,11 +44,13 @@ hmmer_motif_params:
 
 
 run_minimap_regiondb: true
+use_regiondb_in_label_combination: true
 minimap_region_db:
   t2tv2-repeat-details: HG002-Y_T2Tv2_regions_repeat-details.fasta
   hg38-repeat-details: GRCh38-Y_regions_repeat-details.fasta
 
 run_minimap_labelref: true
+use_labelref_in_label_combination: true
 minimap_labeled_references:
   t2tv2-repeat-details:
     sequence: HG002-Y_T2Tv2_CP086569.2.fasta
@@ -55,3 +58,5 @@ minimap_labeled_references:
   hg38-repeat-details:
     sequence: GRCh38.p14_chrY_CM000686.2.fasta
     labels: GRCh38-Y_regions_repeat-details.bed
+
+combine_labels_by_prefix: true
