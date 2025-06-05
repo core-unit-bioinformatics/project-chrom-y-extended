@@ -11,9 +11,13 @@ def read_set_listing(file_path):
 
 def get_sample_file(sample_sheet, sample, file_key):
 
-    if "-" in sample:
+    try:
+        file_path = sample_sheet.loc[sample, file_key]
+    except KeyError:
+        # potentially: sample-haplogroup
         sample, hg = sample.split("-")
-    file_path = sample_sheet.loc[sample, file_key]
+        file_path = sample_sheet.loc[sample, file_key]
+
     _ = pathlib.Path(file_path).resolve(strict=True)
     return file_path
 
