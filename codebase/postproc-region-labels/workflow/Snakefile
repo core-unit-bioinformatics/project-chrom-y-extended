@@ -35,7 +35,7 @@ rule merge_region_by_coord_and_name:
             "{sample}.{ref}.chrY-regions-merged.bed.gz"
         )
     conda:
-        DIR_GLOBAL_ENVS.joinpath()
+        GLOBAL_CONDA_ENVS.joinpath()
     params:
         script=PROJECT_REPO_ROOT.joinpath(
             "codebase", "postproc-region-labels", "workflow",
@@ -55,7 +55,7 @@ rule extract_labeled_sequences:
             "region_seqs", "{sample}.{ref}.chrY-regions.fasta"
         ),
     conda:
-        DIR_GLOBAL_ENVS.joinpath("seqtools.yaml")
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     shell:
         "bedtools getfasta -fi {input.fasta} -bed {input.bed_file} -name -fo {output.fasta}"
 
@@ -70,7 +70,7 @@ rule ref_align_extracted_sequences:
             "{sample}.{ref}.chrY-regions-realigned.paf.gz"
         )
     conda:
-        DIR_GLOBAL_ENVS.joinpath("align_tools.yaml")
+        GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
     threads: 4
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * attempt,
