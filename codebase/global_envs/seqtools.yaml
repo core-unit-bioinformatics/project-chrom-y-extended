@@ -4,7 +4,7 @@ dependencies:
   - htslib=1.21.*
   - seqtk=1.4.*
   - bedtools=2.31.*
-  - python=3.13.*
+  - python=3.12.*
   - pyranges=0.1.*
   - dnaio=1.2.*
   - xopen
