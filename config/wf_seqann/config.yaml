@@ -59,4 +59,4 @@ minimap_labeled_references:
     sequence: GRCh38.p14_chrY_CM000686.2.fasta
     labels: GRCh38-Y_regions_repeat-details.bed
 
-combine_labels_by_prefix: true
+combine_labels_by_group: true
