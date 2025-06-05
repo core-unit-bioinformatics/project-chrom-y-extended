@@ -32,7 +32,7 @@ rule merge_region_by_coord_and_name:
     output:
         bed_file = WD.joinpath(
             "region_labels", "merged",
-            f"{sample}.{ref}.chrY-regions-merged.bed.gz"
+            "{sample}.{ref}.chrY-regions-merged.bed.gz"
         )
     conda:
         DIR_GLOBAL_ENVS.joinpath()
@@ -52,7 +52,7 @@ rule extract_labeled_sequences:
         fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample, "input_path")
     output:
         fasta = WD.joinpath(
-            "region_seqs", f"{sample}.{ref}.chrY-regions.fasta"
+            "region_seqs", "{sample}.{ref}.chrY-regions.fasta"
         ),
     conda:
         DIR_GLOBAL_ENVS.joinpath("seqtools.yaml")
@@ -67,7 +67,7 @@ rule ref_align_extracted_sequences:
     output:
         paf = WD.joinpath(
             "region_alignments",
-            f"{sample}.{ref}.chrY-regions-realigned.paf.gz"
+            "{sample}.{ref}.chrY-regions-realigned.paf.gz"
         )
     conda:
         DIR_GLOBAL_ENVS.joinpath("align_tools.yaml")
