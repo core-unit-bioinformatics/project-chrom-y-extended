@@ -20,6 +20,11 @@ MODULE_REF_GENOMES = {
     "hg38": "GRCh38.p14_chrY_CM000686.2.fasta"
 }
 
+MODULE_REF_LABELINGS = {
+    "t2tv2": "HG002-Y_T2Tv2_regions_repeat-details.bed",
+    "hg38": "GRCh38-Y_regions_repeat-details.bed"
+}
+
 
 rule merge_region_by_coord_and_name:
     """The script first simplifies the region labels
@@ -95,10 +100,39 @@ rule normalize_realigned_region_seqs:
         "{params.script} --input {input.paf} --output {output.tsv}"
 
 
+rule check_realign_precision:
+    input:
+        tsv = rules.normalize_realigned_region_seqs.output.tsv,
+        labels = lambda wildcards: lambda wildcards: WD.joinpath("references", f"{MODULE_REF_LABELINGS[wildcards.ref]}")
+    output:
+        tmp = temp(WD.joinpath(
+            "region_alignments",
+            "{sample}.{ref}.chrY-regions-realigned.tmp.bed"
+        )),
+        bed = WD.joinpath(
+            "region_alignments",
+            "{sample}.{ref}.chrY-regions-realigned.bed.gz"
+        ),
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "check_realign_precision.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --input-aln {input.tsv} --input-regions {input.labels} "
+        "--output-regions {output.tmp}"
+            " && "
+        "bgzip -c {output.tmp} > {output.bed}"
+            " && "
+        "tabix -p bed {output.bed}"
+
+
 rule run_all_postproc_labels:
     input:
         tsv = expand(
-            rules.normalize_realigned_region_seqs.output.tsv,
+            rules.check_realign_precision.output.bed
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         )
