@@ -75,7 +75,7 @@ rule ref_align_extracted_sequences:
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * attempt,
     shell:
-        "minimap2 -a -x asm20 --eqx -c -t {threads} -N 0 --secondary=no "
+        "minimap2 -x asm20 --eqx -c -t {threads} -N 0 --secondary=no "
         "{input.ref} {input.fasta} | gzip > {output.paf}"
 
 
