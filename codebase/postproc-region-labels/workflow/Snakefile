@@ -79,10 +79,26 @@ rule ref_align_extracted_sequences:
         "{input.ref} {input.fasta} | gzip > {output.paf}"
 
 
+rule normalize_realigned_region_seqs:
+    input:
+        paf = rules.ref_align_extracted_sequences.output.paf
+    output:
+        tsv = WD.joinpath(
+            "region_alignments",
+            "{sample}.{ref}.chrY-regions-realigned.norm-paf.tsv.gz"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
+    params:
+        script=GLOBAL_SCRIPTS.joinpath("normalizer", "normalize_paf.py")
+    shell:
+        "{params.script} --input {output.paf} --output {output.tsv}"
+
+
 rule run_all_postproc_labels:
     input:
-        pafs = expand(
-            rules.ref_align_extracted_sequences.output.paf,
+        tsv = expand(
+            rules.normalize_realigned_region_seqs.output.tsv,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         )
