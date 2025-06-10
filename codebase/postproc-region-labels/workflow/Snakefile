@@ -92,7 +92,7 @@ rule normalize_realigned_region_seqs:
     params:
         script=GLOBAL_SCRIPTS.joinpath("normalizer", "normalize_paf.py")
     shell:
-        "{params.script} --input {output.paf} --output {output.tsv}"
+        "{params.script} --input {input.paf} --output {output.tsv}"
 
 
 rule run_all_postproc_labels:
