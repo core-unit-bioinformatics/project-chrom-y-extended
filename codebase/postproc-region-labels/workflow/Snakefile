@@ -35,7 +35,7 @@ rule merge_region_by_coord_and_name:
             "{sample}.{ref}.chrY-regions-merged.bed.gz"
         )
     conda:
-        GLOBAL_CONDA_ENVS.joinpath()
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     params:
         script=PROJECT_REPO_ROOT.joinpath(
             "codebase", "postproc-region-labels", "workflow",
