@@ -132,7 +132,7 @@ rule check_realign_precision:
 rule run_all_postproc_labels:
     input:
         tsv = expand(
-            rules.check_realign_precision.output.bed
+            rules.check_realign_precision.output.bed,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         )
