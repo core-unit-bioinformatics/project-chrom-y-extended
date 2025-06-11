@@ -78,7 +78,7 @@ rule ref_align_extracted_sequences:
         GLOBAL_CONDA_ENVS.joinpath("align_tools.yaml")
     threads: 4
     resources:
-        mem_mb=lambda wildcards, attempt: 4096 * attempt,
+        mem_mb=lambda wildcards, attempt: 4096 * attempt * attempt,
     shell:
         "minimap2 -x asm20 --eqx -c -t {threads} -N 0 --secondary=no "
         "{input.ref} {input.fasta} | gzip > {output.paf}"
