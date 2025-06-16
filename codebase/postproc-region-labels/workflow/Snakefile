@@ -129,10 +129,62 @@ rule check_realign_precision:
         "tabix -p bed {output.bed}"
 
 
+localrules: unzip_kmer_based_color_annotation
+rule unzip_kmer_based_color_annotation:
+    input:
+        zip = PROJECT_REPO_ROOT.joinpath(
+            "annotation", "raw", "20250612_ColorBlockComparisonArang.ML.zip",
+        ).resolve(strict=True)
+    output:
+        csv_dir = dir(WD.joinpath("region_kmer_annot", "raw_csv"))
+    shell:
+        "unzip -j -d {output.csv_dir} {input.zip}"
+
+
+rule normalize_kmer_based_color_annotation:
+    input:
+        csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
+    output:
+        tsv_dir = dir(WD.joinpath("region_kmer_annot", "norm_tsv"))
+    run:
+        import pandas as pd
+        import pathlib as pl
+
+        for csv_file in pl.Path(input.csv_dir).glob("*.csv"):
+            # the format is of course idiosyncratic
+            new_tsv = []
+            sample_name = csv_file.stem.split("_")[0]
+            with open(csv_file, "r") as table_like:
+                _ = table_like.readline()  # skip header
+                for line in table_like:
+                    columns = line.strip().split(",")
+                    seq_name = columns[1]
+                    region_start = int(columns[3])
+                    region_end = int(columns[4])
+                    region_label = columns[5]
+                    orientation = columns[6]
+                    if orientation == "sense":
+                        orientation = "+"
+                    elif orientation == "antisense":
+                        orientation = "-"
+                    else:
+                        raise ValueError(f"Unknown orientation: {orientation}")
+                    row = (seq_name, region_start, region_end, region_label, 1000, orientation)
+            new_tsv = pd.DataFrame(
+                new_tsv,
+                columns=["#seq_name", "start", "end", "name", "score", "strand"]
+            )
+            new_tsv.sort_values(["#seq_name", "start"], inplace=True)
+            out_file = pl.Path(output.tsv_dir).joinpath(f"{sample_name}.chrY-regions-kmer-annot.bed")
+            new_tsv.to_csv(out_file, sep="\t", index=False, header=True)
+    # END OF RUN BLOCK
+
+
 rule run_all_postproc_labels:
     input:
         tsv = expand(
             rules.check_realign_precision.output.bed,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
-        )
+        ),
+        kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir
