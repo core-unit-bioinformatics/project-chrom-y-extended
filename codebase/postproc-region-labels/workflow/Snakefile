@@ -136,7 +136,7 @@ rule unzip_kmer_based_color_annotation:
             "annotation", "raw", "20250612_ColorBlockComparisonArang.ML.zip",
         ).resolve(strict=True)
     output:
-        csv_dir = dir(WD.joinpath("region_kmer_annot", "raw_csv"))
+        csv_dir = directory(WD.joinpath("region_kmer_annot", "raw_csv"))
     shell:
         "unzip -j -d {output.csv_dir} {input.zip}"
 
@@ -145,7 +145,7 @@ rule normalize_kmer_based_color_annotation:
     input:
         csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
     output:
-        tsv_dir = dir(WD.joinpath("region_kmer_annot", "norm_tsv"))
+        tsv_dir = directory(WD.joinpath("region_kmer_annot", "norm_tsv"))
     run:
         import pandas as pd
         import pathlib as pl
