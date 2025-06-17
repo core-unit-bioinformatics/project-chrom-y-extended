@@ -68,9 +68,13 @@ def join_region_labels(alignments, regions):
 
 def compute_asm_seq_length(fasta_header):
 
-    seq_coord = fasta_header.split(":")[-1]
-    start, end = seq_coord.split("-")
-    length = int(end) - int(start)
+    try:
+        seq_coord = fasta_header.split(":")[-1]
+        start, end = seq_coord.split("-")
+        length = int(end) - int(start)
+    except Exception as err:
+        err.add_note("Cannot process FASTA header: {}".format(fasta_header))
+        raise err
     return length
 
 
