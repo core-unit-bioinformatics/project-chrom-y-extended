@@ -154,7 +154,7 @@ rule normalize_kmer_based_color_annotation:
             # the format is of course idiosyncratic
             new_tsv = []
             sample_name = csv_file.stem.split("_")[0]
-            with open(csv_file, "r") as table_like:
+            with open(csv_file, "r", encoding="ascii") as table_like:
                 _ = table_like.readline()  # skip header
                 for line in table_like:
                     columns = line.strip().split(",")
