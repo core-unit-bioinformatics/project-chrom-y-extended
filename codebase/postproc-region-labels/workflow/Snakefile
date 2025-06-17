@@ -149,9 +149,14 @@ rule normalize_kmer_based_color_annotation:
     run:
         import pandas as pd
         import pathlib as pl
+        import sys
 
         for csv_file in pl.Path(input.csv_dir).glob("*.csv"):
             # the format is of course idiosyncratic
+            file_name = csv_file.name
+            if not any(file_name.startswith(sample) for sample in SAMPLES):
+                sys.stderr.write(f"\nWarning: skipping file - likely not a sample file: {file_name}\n")
+                continue  # skip files that do not match any sample name
             new_tsv = []
             sample_name = csv_file.stem.split("_")[0]
             with open(csv_file, "r", encoding="ascii") as table_like:
