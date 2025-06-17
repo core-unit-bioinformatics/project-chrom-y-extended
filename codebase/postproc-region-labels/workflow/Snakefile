@@ -175,6 +175,7 @@ rule normalize_kmer_based_color_annotation:
                     else:
                         raise ValueError(f"Unknown orientation: {orientation}")
                     row = (seq_name, region_start, region_end, region_label, 1000, orientation)
+                    new_tsv.append(row)
             new_tsv = pd.DataFrame(
                 new_tsv,
                 columns=["#seq_name", "start", "end", "name", "score", "strand"]
