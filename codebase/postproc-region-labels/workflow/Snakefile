@@ -166,7 +166,8 @@ rule normalize_kmer_based_color_annotation:
                     seq_name = columns[1]
                     region_start = int(columns[3])
                     region_end = int(columns[4])
-                    region_label = columns[5]
+                    # fix LOFTUS-coding...
+                    region_label = columns[5].replace("gIR", "IR").replace("bIR", "IR")
                     orientation = columns[6]
                     if orientation == "sense":
                         orientation = "+"
