@@ -2,6 +2,7 @@
 
 import argparse as argp
 import pathlib as pl
+import sys
 
 import pandas as pd
 import pyranges as pr
@@ -213,6 +214,15 @@ def main():
     align = pd.read_csv(args.input_aln, sep="\t", header=0)
 
     joined = join_region_labels(align, regions)
+    # if any region (labels) do not exist in the assembly,
+    # they will be dropped here with only an error message
+    missing_labels = joined["asm_seq_name"] == "-1"
+    if missing_labels.any():
+        label_names = sorted(joined.loc[missing_labels, "Name"].unique())
+        sys.stderr.write(
+            f"\nWarning: the following region labels are missing in the assembly: {label_names}\n"
+        )
+        joined = joined.loc[~missing_labels, :].copy()
     joined = add_asm_seq_length(joined)
     joined["asm_region_label"] = joined["asm_seq_name"].apply(add_asm_region_label)
     joined["asm_seq"] = joined["asm_seq_name"].apply(add_asm_seq)
