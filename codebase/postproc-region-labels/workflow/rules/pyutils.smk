@@ -1,0 +1,53 @@
+import pandas
+import collections
+
+_POSTPROC_REGION_LABELS_PYUTILS_CACHE = None
+
+
+def _init_label_cache():
+
+    labels_lut = collections.defaultdict(set)
+    for reference, ref_label_file in MODULE_REF_LABELINGS.items():
+        ref_label_file = WD.joinpath("references", ref_label_file).resolve(strict=True)
+        labels = set(pandas.read_csv(
+            ref_label_file, sep="\t",header=0
+        )["seqclass"])
+        labels_lut[reference].update(labels)
+        labels_lut["all"].update(labels)
+    global _POSTPROC_REGION_LABELS_PYUTILS_CACHE
+    _POSTPROC_REGION_LABELS_PYUTILS_CACHE = labels_lut
+    return None
+
+
+def normalize_label_name(label_name, reference="all"):
+    """Normalize label name to a standard form.
+
+    Args:
+        label_name (str): The label name to normalize.
+        reference (str): The reference genome to use for normalization.
+
+    Returns:
+        str: The normalized label name.
+    """
+    global _POSTPROC_REGION_LABELS_PYUTILS_CACHE
+    if _POSTPROC_REGION_LABELS_PYUTILS_CACHE is None:
+        _init_label_cache()
+
+    reference_labels = _POSTPROC_REGION_LABELS_PYUTILS_CACHE[reference]
+
+    if label_name in reference_labels:
+        norm_label = label_name
+    elif "bIR" in label_name:
+        norm_label = label_name.replace("bIR", "IR")
+    elif "gIR" in label_name:
+        norm_label = label_name.replace("gIR", "IR")
+    elif "spacer" in label_name:
+        spacer_num = label_name[-1]
+        assert int(spacer_num) in [1,2,3,4,5,6,7,8], "Invalid spacer number"
+        norm_label = f"P{spacer_num}-spacer"
+    else:
+        raise ValueError(f"Cannot normalize label: {label_name} (ref: {reference})")
+
+    assert norm_label in reference_labels
+
+    return norm_label

@@ -1,6 +1,8 @@
 include: "../../smk_load_configs.smk"
 include: "../../smk_load_utils.smk"
 
+include: "rules/pyutils.smk"
+
 THIS_MODULE = "postproc-region-labels"
 
 MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
@@ -141,6 +143,7 @@ rule unzip_kmer_based_color_annotation:
         "unzip -j -d {output.csv_dir} {input.zip}"
 
 
+localrules: normalize_kmer_based_color_annotation
 rule normalize_kmer_based_color_annotation:
     input:
         csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
@@ -150,6 +153,10 @@ rule normalize_kmer_based_color_annotation:
         import pandas as pd
         import pathlib as pl
         import sys
+
+        # from pyutils module
+        # bring to local scope
+        norm_label = normalize_label_name
 
         for csv_file in pl.Path(input.csv_dir).glob("*.csv"):
             # the format is of course idiosyncratic
@@ -167,7 +174,7 @@ rule normalize_kmer_based_color_annotation:
                     region_start = int(columns[3])
                     region_end = int(columns[4])
                     # fix LOFTUS-coding...
-                    region_label = columns[5].replace("gIR", "IR").replace("bIR", "IR")
+                    region_label = norm_label(columns[5])
                     orientation = columns[6]
                     if orientation == "sense":
                         orientation = "+"
@@ -188,6 +195,7 @@ rule normalize_kmer_based_color_annotation:
     # END OF RUN BLOCK
 
 
+localrules: unzip_color_unique_kmer_counts
 rule unzip_color_unique_kmer_counts:
     input:
         zip = PROJECT_REPO_ROOT.joinpath(
@@ -231,6 +239,7 @@ rule normalize_color_unique_kmer_counts:
                 ).hexdigest(),
                 axis=1
             )
+            df["kmerColor"] = df["kmerColor"].apply(normalize_label_name)
 
             # following: rank the possible labels by
             # their unique k-mer count and compute some
@@ -283,6 +292,7 @@ rule normalize_color_unique_kmer_counts:
             df = df.join(ext_df)
             df.drop("region_id", axis=1, inplace=True)
             df.sort_values(["#Contig", "Start", "totalUniqueKmerHits"], inplace=True, ascending=[True, True, False])
+
             out_filename = f"{sample}_chrY-regions_uniq-kmer-counts.tsv"
             out_filepath = pl.Path(output.tsv_dir).joinpath(out_filename)
             out_filepath.parent.mkdir(parents=True, exist_ok=True)
