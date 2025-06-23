@@ -300,10 +300,42 @@ rule normalize_color_unique_kmer_counts:
     # END OF RUN BLOCK
 
 
+rule merge_aln_and_kmer_annotation:
+    input:
+        aln_bed = rules.check_realign_precision.output.bed,
+        strand_kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir,
+        uniq_color_kmer_tsv = rules.normalize_color_unique_kmer_counts.output.tsv_dir
+    output:
+        bed = WD.joinpath(
+            "region_labels_aln_kmers",
+            "{sample}.{ref}.chrY-regions.aln-kmer-merged.bed"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "merge_kmer_annotation.py"
+        ).resolve(strict=True),
+        kmer_strand_info = lambda wildcards, input: pl.Path(
+            input.strand_kmer_tsv,
+            f"{wildcards.sample}.chrY-regions-kmer-annot.bed"
+        ),
+        kmer_color_info = lambda wildcards, input: pl.Path(
+            input.uniq_color_kmer_tsv,
+            f"{wildcards.sample}_chrY-regions_uniq-kmer-counts.tsv"
+        ),
+    shell:
+        "{params.script} --aln-region-labels {input.aln_bed} "
+        "--kmer-strands {input.strand_kmer_tsv} "
+        "--kmer-region-labels {input.uniq_color_kmer_tsv} "
+        "--output {output.bed}"
+
+
 rule run_all_postproc_labels:
     input:
         tsv = expand(
-            rules.check_realign_precision.output.bed,
+            rules.merge_aln_and_kmer_annotation.output.bed,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
