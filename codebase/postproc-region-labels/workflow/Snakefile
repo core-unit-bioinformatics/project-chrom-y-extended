@@ -1,3 +1,5 @@
+import pathlib
+
 include: "../../smk_load_configs.smk"
 include: "../../smk_load_utils.smk"
 
@@ -317,11 +319,11 @@ rule merge_aln_and_kmer_annotation:
             "codebase", "postproc-region-labels", "workflow",
             "scripts", "merge_kmer_annotation.py"
         ).resolve(strict=True),
-        kmer_strand_info = lambda wildcards, input: pl.Path(
+        kmer_strand_info = lambda wildcards, input: pathlib.Path(
             input.strand_kmer_tsv,
             f"{wildcards.sample}.chrY-regions-kmer-annot.bed"
         ),
-        kmer_color_info = lambda wildcards, input: pl.Path(
+        kmer_color_info = lambda wildcards, input: pathlib.Path(
             input.uniq_color_kmer_tsv,
             f"{wildcards.sample}_chrY-regions_uniq-kmer-counts.tsv"
         ),
