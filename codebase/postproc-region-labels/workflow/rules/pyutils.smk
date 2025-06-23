@@ -46,8 +46,9 @@ def normalize_label_name(label_name, reference="all"):
         assert int(spacer_num) in [1,2,3,4,5,6,7,8], "Invalid spacer number"
         norm_label = f"P{spacer_num}-spacer"
     else:
-        raise ValueError(f"Cannot normalize label: {label_name} (ref: {reference})")
+        pass
 
-    assert norm_label in reference_labels
+    if norm_label not in reference_labels:
+        raise ValueError(f"Normalization failed: from {label_name} to {norm_label} (ref: {reference})")
 
     return norm_label
