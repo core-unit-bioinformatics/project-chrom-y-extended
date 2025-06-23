@@ -206,6 +206,7 @@ rule normalize_color_unique_kmer_counts:
     output:
         tsv_dir = directory(WD.joinpath("region_kmer_annot", "norm_color_unique_kmers"))
     run:
+        import hashlib as hl
         import numpy as np
         import pandas as pd
         import pathlib as pl
