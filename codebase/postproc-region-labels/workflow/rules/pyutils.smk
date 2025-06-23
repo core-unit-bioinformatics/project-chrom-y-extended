@@ -39,8 +39,12 @@ def normalize_label_name(label_name, reference="all"):
         norm_label = label_name
     elif "bIR" in label_name:
         norm_label = label_name.replace("bIR", "IR")
+        parts = norm_label.split("-", 1)
+        norm_label = parts[0] + "_" + parts[1]
     elif "gIR" in label_name:
         norm_label = label_name.replace("gIR", "IR")
+        parts = norm_label.split("-", 1)
+        norm_label = parts[0] + "_" + parts[1]
     elif "spacer" in label_name:
         spacer_num = label_name[-1]
         assert int(spacer_num) in [1,2,3,4,5,6,7,8], "Invalid spacer number"
