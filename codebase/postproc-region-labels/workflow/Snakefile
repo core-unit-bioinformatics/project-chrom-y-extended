@@ -296,4 +296,5 @@ rule run_all_postproc_labels:
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
-        kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir
+        kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir,
+        uniq_kmer_tsv = rules.normalize_color_unique_kmer_counts.output.tsv_dir
