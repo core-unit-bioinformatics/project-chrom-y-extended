@@ -82,6 +82,11 @@ def load_ml_motif_hits(file_path, motif_name):
         names=header, usecols=columns,
         skiprows=1
     )
+
+    # manual fixes for ... stuff
+    df["name"] = df["name"].replace({"TSPY2": "TSPY"}, inplace=False)
+    df["strand"] = df["strand"].replace({"PossibleInversion": "."}, inplace=False)
+
     df["score"] = 1000
     df = df[["#seq", "start", "end", "name", "score", "strand"]]
     assert (df["strand"].isin(["+", "-", "."])).all(), f"malformed file / strand: {file_path.name} / {df}"
