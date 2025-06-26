@@ -73,7 +73,7 @@ def load_ml_motif_hits(file_path, motif_name):
         columns = [1, 2, 5, 6, 7]
     elif motif_name in ["yq12", "dyz19"]:
         header = ["#seq", "name", "strand", "start", "end"]
-        columns = [1, 2, 3, 4, 5]
+        columns = [0, 1, 2, 3, 4]
     else:
         raise ValueError(f"Unknown motif: {motif_name}")
 
