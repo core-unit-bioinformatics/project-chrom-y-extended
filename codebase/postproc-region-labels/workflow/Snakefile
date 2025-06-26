@@ -359,7 +359,8 @@ rule normalize_filtered_hmmer_hits:
     run:
 
         for folder in input.hmmer_filtered:
-            motif_name = folder.resolve(strict=True).name.replace("hmmerFilter", "")
+            folder = pathlib.Path(folder).resolve(strict=True)
+            motif_name = folder.name.replace("hmmerFilter", "")
             assert motif_name in ["tspy", "dyz19", "yq12"]
             for csv_file in folder.glob("**/*.csv"):
                 if "old" in str(csv_file.parent):
