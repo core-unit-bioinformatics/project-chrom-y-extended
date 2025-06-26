@@ -376,10 +376,15 @@ rule normalize_filtered_hmmer_hits:
 
 
 rule run_all_postproc_labels:
+    """potential TODO: add the reference kmer annotation
+    analogous to the sample-level kmer annotation to
+    have a proper baseline for accuracy
+    (needs to be done by ML)
+    """
     input:
         tsv = expand(
             rules.merge_aln_and_kmer_annotation.output.bed,
-            sample=SAMPLES,
+            sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
             ref=list(MODULE_REF_GENOMES.keys())
         ),
         kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir,
