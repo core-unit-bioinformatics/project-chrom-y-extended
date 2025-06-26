@@ -343,9 +343,9 @@ rule normalize_filtered_hmmer_hits:
     """
     input:
         hmmer_filtered = [
-            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_dyz19"]),
-            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_tspy"]),
-            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_yq12"])
+            pathlib.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_dyz19"]),
+            pathlib.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_tspy"]),
+            pathlib.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_yq12"])
         ]
     output:
         hmmer_motifs = expand(
