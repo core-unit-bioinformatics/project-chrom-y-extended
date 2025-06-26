@@ -329,8 +329,8 @@ rule merge_aln_and_kmer_annotation:
         ),
     shell:
         "{params.script} --aln-region-labels {input.aln_bed} "
-        "--kmer-strands {input.strand_kmer_tsv} "
-        "--kmer-region-labels {input.uniq_color_kmer_tsv} "
+        "--kmer-strands {params.kmer_strand_info} "
+        "--kmer-region-labels {params.kmer_color_info} "
         "--output {output.bed}"
 
 
