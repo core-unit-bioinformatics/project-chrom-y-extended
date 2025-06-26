@@ -60,6 +60,14 @@ def normalize_label_name(label_name, reference="all"):
 
 def load_ml_motif_hits(file_path, motif_name):
 
+    # these are the names that show up in the files
+    # processed here --- see annotation/norm/motifs
+    known_motif_names = [
+        'DYZ18_Yq', 'DYZ19_Yq', 'DYZ1_Yq','DYZ2_Con',
+        'DYZ3-prim_Ycentro', 'DYZ3-sec_Ycentro',
+        'TSPY', 'Yqhet_2k7bp', 'Yqhet_3k1bp'
+    ]
+
     if motif_name in ["tspy"]:
         header = ["#seq", "name", "start", "end", "strand"]
         columns = [1, 2, 5, 6, 7]
@@ -76,5 +84,8 @@ def load_ml_motif_hits(file_path, motif_name):
     )
     df["score"] = 1000
     df = df[["#seq", "start", "end", "name", "score", "strand"]]
+    assert (df["strand"].isin(["+", "-", "."])).all(), f"malformed file / strand: {file_path}"
+    assert (df["name"].isin(known_motif_names)).all(), f"malformed file / name: {file_path}"
+    assert (df["start"] < df["end"]).all(), f"malformed file / coord: {file_path}"
     df.sort_values(["#seq", "start", "end"], inplace=True)
     return df
