@@ -350,7 +350,7 @@ rule normalize_filtered_hmmer_hits:
     output:
         hmmer_motifs = expand(
             WD.joinpath(
-                "hmmer_filtered_hits", "{motif}"
+                "hmmer_filtered_hits", "{motif}",
                 "{sample}.{motif}.chrY-hmmer-filtered-hits.bed"
             ),
             sample=SAMPLES,
@@ -368,7 +368,7 @@ rule normalize_filtered_hmmer_hits:
                 sample = csv_file.name.split(".")[0]
                 bed_df = load_ml_motif_hits(csv_file, motif_name)
                 out_file = WD.joinpath(
-                    "hmmer_filtered_hits", f"{motif_name}"
+                    "hmmer_filtered_hits", f"{motif_name}",
                     f"{sample}.{motif_name}.chrY-hmmer-filtered-hits.bed"
                 )
                 bed_df.to_csv(out_file, sep="\t", header=True, index=False)
