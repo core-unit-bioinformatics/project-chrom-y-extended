@@ -84,8 +84,8 @@ def load_ml_motif_hits(file_path, motif_name):
     )
     df["score"] = 1000
     df = df[["#seq", "start", "end", "name", "score", "strand"]]
-    assert (df["strand"].isin(["+", "-", "."])).all(), f"malformed file / strand: {file_path}"
-    assert (df["name"].isin(known_motif_names)).all(), f"malformed file / name: {file_path}"
-    assert (df["start"] < df["end"]).all(), f"malformed file / coord: {file_path}"
+    assert (df["strand"].isin(["+", "-", "."])).all(), f"malformed file / strand: {file_path.name} / {df}"
+    assert (df["name"].isin(known_motif_names)).all(), f"malformed file / name: {file_path.name} / {df}"
+    assert (df["start"] < df["end"]).all(), f"malformed file / coord: {file_path.name} / {df}"
     df.sort_values(["#seq", "start", "end"], inplace=True)
     return df
