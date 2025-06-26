@@ -334,6 +334,46 @@ rule merge_aln_and_kmer_annotation:
         "--output {output.bed}"
 
 
+localrules: normalize_filtered_hmmer_hits
+rule normalize_filtered_hmmer_hits:
+    """This rule is highly application-specific because
+    it depends on externally filtered high-quality HMMER
+    hit (provided by Mark Loftus). These data come in slightly
+    non-uniform format and must be normalized first.
+    """
+    input:
+        hmmer_filtered = [
+            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_dyz19"]),
+            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_tspy"]),
+            pl.Path(PROJECT_CONFIG["remote_hilbert_prefix"]).joinpath(PROJECT_CONFIG["hmmer_filtered_yq12"])
+        ]
+    output:
+        hmmer_motifs = expand(
+            WD.joinpath(
+                "hmmer_filtered_hits", "{motif}"
+                "{sample}.{motif}.chrY-hmmer-filtered-hits.bed"
+            ),
+            sample=SAMPLES,
+            motif=["tspy", "dyz19", "yq12"]
+        )
+    run:
+
+        for folder in hmmer_filtered:
+            motif_name = folder.name.replace("hmmerFilter", "")
+            assert motif_name in ["tspy", "dyz19", "yq12"]
+            for csv_file in folder.glob("**/*.csv"):
+                if "old" in str(csv_file.parent):
+                    continue
+                sample = csv_file.name.split(".")[0]
+                bed_df = load_ml_motif_hits(csv_file, motif_name)
+                out_file = WD.joinpath(
+                    "hmmer_filtered_hits", f"{motif_name}"
+                    f"{sample}.{motif_name}.chrY-hmmer-filtered-hits.bed"
+                )
+                bed_df.to_csv(out_file, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_postproc_labels:
     input:
         tsv = expand(
@@ -342,4 +382,5 @@ rule run_all_postproc_labels:
             ref=list(MODULE_REF_GENOMES.keys())
         ),
         kmer_tsv = rules.normalize_kmer_based_color_annotation.output.tsv_dir,
-        uniq_kmer_tsv = rules.normalize_color_unique_kmer_counts.output.tsv_dir
+        uniq_kmer_tsv = rules.normalize_color_unique_kmer_counts.output.tsv_dir,
+        hmmer_motif_hits = rules.normalize_filtered_hmmer_hits.output.hmmer_motifs

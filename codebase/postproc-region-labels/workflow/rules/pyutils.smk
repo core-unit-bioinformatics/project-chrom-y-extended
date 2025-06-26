@@ -56,3 +56,25 @@ def normalize_label_name(label_name, reference="all"):
         raise ValueError(f"Normalization failed: from {label_name} to {norm_label} (ref: {reference})")
 
     return norm_label
+
+
+def load_ml_motif_hits(file_path, motif_name):
+
+    if motif_name in ["tspy"]:
+        header = ["#seq", "name", "start", "end", "strand"]
+        columns = [1, 2, 5, 6, 7]
+    elif motif_name in ["yq12", "dyz19"]:
+        header = ["#seq", "name", "strand", "start", "end"]
+        columns = [1, 2, 3, 4, 5]
+    else:
+        raise ValueError(f"Unknown motif: {motif_name}")
+
+    df = pandas.read_csv(
+        file_path, sep=",", header=None,
+        names=header, usecols=columns,
+        skiprows=1
+    )
+    df["score"] = 1000
+    df = df[["#seq", "start", "end", "name", "score", "strand"]]
+    df.sort_values(["#seq", "start", "end"], inplace=True)
+    return df
