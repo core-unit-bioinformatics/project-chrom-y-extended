@@ -85,7 +85,8 @@ def load_ml_motif_hits(file_path, motif_name):
 
     # manual fixes for ... stuff
     df["name"] = df["name"].replace({"TSPY2": "TSPY"}, inplace=False)
-    df["strand"] = df["strand"].replace({"PossibleInversion": "."}, inplace=False)
+    # my brain hurts...
+    df["strand"] = df["strand"].replace({"PossibleInversion": ".", "Possible_Inversion": "."}, inplace=False)
 
     df["score"] = 1000
     df = df[["#seq", "start", "end", "name", "score", "strand"]]
