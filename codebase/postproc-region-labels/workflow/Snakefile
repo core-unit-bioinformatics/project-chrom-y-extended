@@ -379,7 +379,14 @@ localrules: merge_hmmer_hits_into_aln_kmer_regions
 rule merge_hmmer_hits_into_aln_kmer_regions:
     input:
         regions = rules.merge_aln_and_kmer_annotation.output.bed,
-        hmmer_hits = rules.normalize_filtered_hmmer_hits.output.hmmer_motifs
+        hmmer_hits = expand(
+            WD.joinpath(
+                "hmmer_filtered_hits", "{motif}",
+                "{sample}.{motif}.chrY-hmmer-filtered-hits.bed"
+            ),
+            motif=["tspy", "dyz19", "yq12"],
+            allow_missing=True
+        )
     output:
         bed = WD.joinpath(
             "aln_kmer_hmmer", "merged_wo_qc",
