@@ -1,5 +1,7 @@
-import pandas
 import collections
+import pandas
+import re
+
 
 _POSTPROC_REGION_LABELS_PYUTILS_CACHE = None
 
@@ -59,6 +61,15 @@ def normalize_label_name(label_name, reference="all"):
 
 
 def load_ml_motif_hits(file_path, motif_name):
+    """Based on entries like this one:
+
+    HG01358_chrY_random0000464      1       42035   DYZ1_Yq 1000
+
+    the assumption is that the input tables use
+    a 1-based coordinate system. This is corrected
+    here to conform to the desired BED-like output
+    format in the calling scope.
+    """
 
     # these are the names that show up in the files
     # processed here --- see annotation/norm/motifs
@@ -96,5 +107,20 @@ def load_ml_motif_hits(file_path, motif_name):
     assert (df["strand"].isin(["+", "-", "."])).all(), f"malformed file / strand: {file_path.name} / {df}"
     assert (df["name"].isin(known_motif_names)).all(), f"malformed file / name: {file_path.name} / {df}"
     assert (df["start"] < df["end"]).all(), f"malformed file / coord: {file_path.name} / {df}"
+    df["start"] -= 1
+    assert (df["start"] >= 0).all(), f"Shift to min-zero failed for start coordinate: {file_path.name} / {df}"
     df.sort_values(["#seq", "start", "end"], inplace=True)
     return df
+
+
+def build_redundant_motif_filter(motif_names):
+
+    expr = "(" + "|".join(sorted(motif_names)) + ")"
+    expr = expr + "([\.\-_]|$)"
+
+    match_motifs = re.compile(expr)
+
+    tag_motifs = lambda label: match_motifs.search(label, flags=re.IGNORECASE) is not None
+
+    return tag_motifs
+
