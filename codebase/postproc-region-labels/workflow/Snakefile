@@ -402,14 +402,26 @@ rule merge_hmmer_hits_into_aln_kmer_regions:
         ))
 
         regions["is_replaced"] = regions["name"].apply(tag_motifs) | regions["second_best_guess"].apply(tag_motifs)
-        print(regions.shape)
-        print(regions.head())
-        print(regions.tail())
-
         regions = regions.loc[~regions["is_replaced"], :].copy()
-        print(regions.shape)
-        raise
 
+        regions.drop("is_replaced", axis=1, inplace=True)
+
+        hmmer["thickStart"] = hmmer["start"]
+        hmmer["thickEnd"] = hmmer["end"]
+        hmmer["assign_method"] = "hmmer",
+        hmmer["second_best_guess"] = hmmer["name"]
+        hmmer["kmer_top_enrich"] = 0
+        hmmer["other_support"] = "unknown"
+        hmmer["other_orientation"] = "."
+        hmmer["cluster_id"] = -1
+
+        regions = pd.concat([regions, hmmer], axis=0, ignore_index=False)
+        regions.sort_values(["#seq", "start", "end"], inplace=True)
+
+        assert not pd.isnull(regions).any(axis=0).any()
+
+        regions.to_csv(output.bed, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
 
 
 rule run_all_postproc_labels:
