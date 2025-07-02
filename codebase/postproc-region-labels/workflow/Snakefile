@@ -398,7 +398,7 @@ rule merge_hmmer_hits_into_aln_kmer_regions:
         regions = pd.read_csv(input.regions, sep="\t", header=0)
 
         tag_motifs = build_redundant_motif_filter(set(
-            ["tspy", "dyz19", "yq12"] + hmmer_motif_hits["name"].tolist()
+            ["tspy", "dyz19", "yq12"] + hmmer["name"].tolist()
         ))
 
         regions["is_replaced"] = regions["name"].apply(tag_motifs) | regions["second_best_guess"].apply(tag_motifs)
