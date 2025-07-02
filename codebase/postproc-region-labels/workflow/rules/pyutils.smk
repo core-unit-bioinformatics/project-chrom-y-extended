@@ -118,9 +118,9 @@ def build_redundant_motif_filter(motif_names):
     expr = "(" + "|".join(sorted(motif_names)) + ")"
     expr = expr + "([\.\-_]|$)"
 
-    match_motifs = re.compile(expr)
+    match_motifs = re.compile(expr, flags=re.IGNORECASE)
 
-    tag_motifs = lambda label: match_motifs.search(label, flags=re.IGNORECASE) is not None
+    tag_motifs = lambda label: match_motifs.search(label) is not None
 
     return tag_motifs
 
