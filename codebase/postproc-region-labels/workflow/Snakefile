@@ -408,7 +408,7 @@ rule merge_hmmer_hits_into_aln_kmer_regions:
 
         hmmer["thickStart"] = hmmer["start"]
         hmmer["thickEnd"] = hmmer["end"]
-        hmmer["assign_method"] = "hmmer",
+        hmmer["assign_method"] = "hmmer"
         hmmer["second_best_guess"] = hmmer["name"]
         hmmer["kmer_top_enrich"] = 0
         hmmer["other_support"] = "unknown"
