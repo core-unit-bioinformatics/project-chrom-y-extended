@@ -137,7 +137,7 @@ localrules: unzip_kmer_based_color_annotation
 rule unzip_kmer_based_color_annotation:
     input:
         zip = PROJECT_REPO_ROOT.joinpath(
-            "annotation", "raw", "20250612_ColorBlockComparisonArang.ML.zip",
+            "annotation", "raw", "20250710_ColorBlockComparisonArang_v2.ML.zip",
         ).resolve(strict=True)
     output:
         csv_dir = directory(WD.joinpath("region_kmer_annot", "raw_csv"))
@@ -145,9 +145,65 @@ rule unzip_kmer_based_color_annotation:
         "unzip -j -d {output.csv_dir} {input.zip}"
 
 
+localrule: merge_xyy_sample_blocks
+rule merge_xyy_sample_blocks:
+    """Because he is such a cool dude by his own standards,
+    ML put the two chrY copies of the XYY sample HG03456
+    into separate files.
+    Re-merge them here to have the workflow work as before
+    (w/o the HGSVC sample set).
+    """
+    input:
+        csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
+    output:
+        check = WD.joinpath("region_kmer_annot", "hg03456_xyy_blocks_merged.ok")
+    params:
+        seq1 = pl.Path(
+            rules.unzip_kmer_based_color_annotation.output.csv_dir
+        ).joinpath(
+            "ColorBlockComparisonArang",
+            "HG03456_HG03456_chrY_1_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        ).resolve(strict=True),
+        seq2 = pl.Path(
+            rules.unzip_kmer_based_color_annotation.output.csv_dir
+        ).joinpath(
+            "ColorBlockComparisonArang",
+            "HG03456_HG03456_chrY_2_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        ).resolve(strict=True),
+        out = pl.Path(
+            rules.unzip_kmer_based_color_annotation.output.csv_dir
+        ).joinpath(
+            "ColorBlockComparisonArang",
+            "HG03456_HG03456_chrY_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        )
+    run:
+        out_lines = []
+        total_lines = 0
+        assert str(params.seq1) != str(params.seq2)
+        for csv_file in [params.seq1, params.seq2]:
+            read_header = "_chrY_1_" in str(csv_file)
+            with open(csv_file, "r") as listing:
+                if read_header:
+                    out_lines.append(listing.readline().strip())
+                else:
+                    # skip header of second file
+                    _ = listing.readline()
+                for line in listing:
+                    ln = total_lines
+                    data_part = line.strip().split(",", 1)[-1]
+                    out_lines.append(
+                        f"{ln},{data_part}"
+                    )
+                    total_lines += 1
+        with open(params.out, "w") as dump:
+            _ = dump.write("\n".join(out_lines))
+    # END OF RUN BLOCK
+
+
 localrules: normalize_kmer_based_color_annotation
 rule normalize_kmer_based_color_annotation:
     input:
+        xyy_mrg = rules.merge_xyy_sample_blocks.output.check,
         csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
     output:
         tsv_dir = directory(WD.joinpath("region_kmer_annot", "norm_tsv"))
@@ -166,6 +222,9 @@ rule normalize_kmer_based_color_annotation:
             if not any(file_name.startswith(sample) for sample in SAMPLES):
                 sys.stderr.write(f"\nWarning: skipping file - likely not a sample file: {file_name}\n")
                 continue  # skip files that do not match any sample name
+            if "_chrY_1_" in file_name or "_chrY_2_" in file_name:
+                sys.stderr.write(f"\nSkipping unmerged HG03456-XYY: {file_name}\n")
+                continue  # see previous rule
             new_tsv = []
             sample_name = csv_file.stem.split("_")[0]
             with open(csv_file, "r", encoding="ascii") as table_like:
@@ -201,12 +260,12 @@ localrules: unzip_color_unique_kmer_counts
 rule unzip_color_unique_kmer_counts:
     input:
         zip = PROJECT_REPO_ROOT.joinpath(
-            "annotation", "raw", "20250618_Bed_Files_ColorBlocks.ML.zip",
+            "annotation", "raw", "20250707_Peter_Bed_Files_ColorBlocks.ML.zip",
         ).resolve(strict=True)
     output:
         bed_dir = directory(WD.joinpath("region_kmer_annot", "color_unique_kmers"))
     shell:
-        "unzip -j -d {output.bed_dir} {input.zip} "
+        "unzip -o -j -d {output.bed_dir} {input.zip} "
 
 
 localrules: normalize_color_unique_kmer_counts
