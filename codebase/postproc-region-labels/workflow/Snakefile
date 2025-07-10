@@ -158,19 +158,19 @@ rule merge_xyy_sample_blocks:
     output:
         check = WD.joinpath("region_kmer_annot", "hg03456_xyy_blocks_merged.ok")
     params:
-        seq1 = pl.Path(
+        seq1 = pathlib.Path(
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
             "HG03456_HG03456_chrY_1_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
         ).resolve(strict=True),
-        seq2 = pl.Path(
+        seq2 = pathlib.Path(
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
             "HG03456_HG03456_chrY_2_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
         ).resolve(strict=True),
-        out = pl.Path(
+        out = pathlib.Path(
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
