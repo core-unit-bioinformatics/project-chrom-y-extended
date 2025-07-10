@@ -145,7 +145,7 @@ rule unzip_kmer_based_color_annotation:
         "unzip -j -d {output.csv_dir} {input.zip}"
 
 
-localrule: merge_xyy_sample_blocks
+localrules: merge_xyy_sample_blocks
 rule merge_xyy_sample_blocks:
     """Because he is such a cool dude by his own standards,
     ML put the two chrY copies of the XYY sample HG03456
