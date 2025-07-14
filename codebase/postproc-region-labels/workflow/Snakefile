@@ -196,6 +196,8 @@ rule merge_xyy_sample_blocks:
                     total_lines += 1
         with open(params.out, "w") as dump:
             _ = dump.write("\n".join(out_lines))
+        with open(output.check, "w"):
+            pass
     # END OF RUN BLOCK
 
 
