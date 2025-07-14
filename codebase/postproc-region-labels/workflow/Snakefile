@@ -162,19 +162,19 @@ rule merge_xyy_sample_blocks:
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
-            "HG03456_HG03456_chrY_1_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+            "HG03456_chrY_1_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
         ),
         seq2 = pathlib.Path(
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
-            "HG03456_HG03456_chrY_2_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+            "HG03456_chrY_2_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
         ),
         out = pathlib.Path(
             rules.unzip_kmer_based_color_annotation.output.csv_dir
         ).joinpath(
             "ColorBlockComparisonArang",
-            "HG03456_HG03456_chrY_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+            "HG03456_chrY_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
         )
     run:
         out_lines = []
