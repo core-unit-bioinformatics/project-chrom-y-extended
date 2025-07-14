@@ -177,6 +177,8 @@ rule merge_xyy_sample_blocks:
         out_lines = []
         total_lines = 0
         assert str(params.seq1) != str(params.seq2)
+        assert params.seq1.resolve(strict=True)
+        assert params.seq2.resolve(strict=True)
         for csv_file in [params.seq1, params.seq2]:
             read_header = "_chrY_1_" in str(csv_file)
             with open(csv_file, "r") as listing:
