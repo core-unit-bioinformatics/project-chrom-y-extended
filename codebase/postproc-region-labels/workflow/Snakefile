@@ -491,6 +491,31 @@ rule merge_hmmer_hits_into_aln_kmer_regions:
     # END OF RUN BLOCK
 
 
+localrules: draft_summary_region_annotation
+rule draft_summary_region_annotation:
+    input:
+        table = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed
+    output:
+        tsv = WD.joinpath(
+            "statistics", "merged_wo_qc",
+            "{sample}.{ref}.chrY-regions.aln-kmer-hmmer.stats.tsv"
+        )
+    run:
+        import pandas as pd
+
+        df = pd.read_csv(input.table, sep="\t", header=0)
+        df["length"] = df["end"] - df["start"]
+
+        grand_total = df["length"].sum()
+        label_total = df.groupby("name")["length"].sum()
+        label_total["total"] = grand_total
+        label_total["sample"] = wildcards.sample
+        label_total["ref"] = wildcards.ref
+
+        label_total.to_csv(output.tsv, sep="\t", header=True, index=True)
+    # END OF RUN BLOCK
+
+
 rule run_all_postproc_labels:
     """potential TODO: add the reference kmer annotation
     analogous to the sample-level kmer annotation to
@@ -499,7 +524,7 @@ rule run_all_postproc_labels:
     """
     input:
         tsv = expand(
-            rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed,
+            rules.draft_summary_region_annotation.output.tsv,
             sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
             ref=list(MODULE_REF_GENOMES.keys())
         ),
