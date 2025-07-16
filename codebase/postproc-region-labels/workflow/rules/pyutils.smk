@@ -114,12 +114,30 @@ def load_ml_motif_hits(file_path, motif_name):
 
 
 def build_redundant_motif_filter(motif_names):
+    """The first str replacement operations fixes
+    more idiosyncracies in entity naming. For the HMMER
+    motif names, the suffixes "_Yq" and "_Con" were
+    added (e.g., DYZ18_Yq, DYZ19_Yq and so on) that do not
+    exist for the same motif names in the region annotation
+    files, e.g.
+    chrY	20054848	20351038	44n_DYZ19	DYZ19	chrY_hg38_44n_DYZ19
+    chrY	20961203	21226263	39u_DYZ19	DYZ19	chrY_T2Tv2_39u_DYZ19
+    and nobody knows why that is...
+
+    See also inline comment below
+    """
+
+    motif_names = [m.replace("_Yq", "").replace("_Con", "") for m in motif_names]
 
     expr = "(" + "|".join(sorted(motif_names)) + ")"
-    expr = expr + "([\.\-_]|$)"
+    expr = expr + "$"
 
     match_motifs = re.compile(expr, flags=re.IGNORECASE)
 
+    # this inline function matches something like
+    # 'label [from region annotation, e.g. DYZ19]'
+    # 'matches any of the HMMER motifs'
+    # which originally carried also a "_Yq" suffix
     tag_motifs = lambda label: match_motifs.search(label) is not None
 
     return tag_motifs
