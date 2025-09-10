@@ -10,8 +10,9 @@
       "hilbert_verkko_assembly_folder": "projects/medbioinf/data/00_RESTRUCTURE/project-centric/hprc/assemblies/6807247E-4F71-45D8-AECE-9E5813BA1D9F--verkko-v2.2.1-release2_asms",
       "hilbert_extracted_seq_workdir": "projects/medbioinf/projects/cubi/projects/chrom-y-extended/smk-workdir/00-extract",
       "hilbert_verkko_sub_folder_arhie": [
-        "projects/medbioinf/data/00_RESTRUCTURE/project-centric/hprc/assemblies/verkko-v2.2.1-release2_chrY_ARhie/v2/chrY_assemblies",
-        "projects/medbioinf/data/00_RESTRUCTURE/project-centric/hprc/assemblies/verkko-v2.2.1-release2_chrY_ARhie/hgsvc/v1/chrY_assemblies"
+        "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/nhgri/arang-rhie/asm-annot/ceph/chrY_assemblies",
+        "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/nhgri/arang-rhie/asm-annot/hgsvc/chrY_assemblies",
+        "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/nhgri/arang-rhie/asm-annot/hprc/chrY_assemblies"
       ],
       "nb_cache_subfolder": "codebase/.cache",
       "hilbert_wf_seqann_folder": "projects/medbioinf/projects/cubi/projects/chrom-y-extended/workflows/wf-seqann/wd",
