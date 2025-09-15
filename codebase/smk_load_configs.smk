@@ -50,7 +50,8 @@ GLOBAL_SCRIPTS = PROJECT_REPO_ROOT.joinpath("codebase", "global_scripts").resolv
 SAMPLE_SHEETS = {
     "vrk_assm": load_sample_sheet("verkko_assemblies", PROJECT_REPO_ROOT),
     "vrk_chrom": load_sample_sheet("verkko_sex_chrom", PROJECT_REPO_ROOT),
-    "vrk_chrY_arhie": load_sample_sheet("verkko_chrY_arhie-v2", PROJECT_REPO_ROOT)
+    "vrk_chrY_arhie": load_sample_sheet("verkko_chrY_arhie-v2", PROJECT_REPO_ROOT),
+    "vrk_chrY_arhie_freeze": load_sample_sheet("verkko_chrY_arhie_freeze", PROJECT_REPO_ROOT)
 }
 
 SUBFOLDERS = {
