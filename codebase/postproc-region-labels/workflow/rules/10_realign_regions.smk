@@ -130,6 +130,6 @@ rule run_all_realign_regions:
     input:
         bed = expand(
             rules.check_realign_precision.output.bed,
-            sample=sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
+            sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
             ref=list(MODULE_REF_GENOMES.keys())
         )
