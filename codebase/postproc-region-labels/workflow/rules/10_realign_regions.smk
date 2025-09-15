@@ -5,6 +5,7 @@ back to the reference genome and assessing the precision
 of that alignment.
 """
 
+SUB_WD = WD.joinpath("10-realign-regions")
 
 rule merge_region_by_coord_and_name:
     """The script first simplifies the region labels
@@ -22,7 +23,7 @@ rule merge_region_by_coord_and_name:
             "results", "annotations", "combined"
         ).glob(f"{wildcards.sample}.*cmb-{wildcards.ref}.concat.bed.gz")
     output:
-        bed_file = WD.joinpath(
+        bed_file = SUB_WD.joinpath(
             "region_labels", "merged",
             "{sample}.{ref}.chrY-regions-merged.bed.gz"
         )
@@ -50,7 +51,7 @@ rule extract_labeled_sequences:
         bed_file = rules.merge_region_by_coord_and_name.output.bed_file,
         fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample, "input_path")
     output:
-        fasta = WD.joinpath(
+        fasta = SUB_WD.joinpath(
             "region_seqs", "{sample}.{ref}.chrY-regions.fasta"
         ),
     conda:
@@ -64,7 +65,7 @@ rule ref_align_extracted_sequences:
         fasta = rules.extract_labeled_sequences.output.fasta,
         ref = lambda wildcards: WD.joinpath("references", f"{MODULE_REF_GENOMES[wildcards.ref]}")
     output:
-        paf = WD.joinpath(
+        paf = SUB_WD.joinpath(
             "region_alignments",
             "{sample}.{ref}.chrY-regions-realigned.paf.gz"
         )
@@ -82,7 +83,7 @@ rule normalize_realigned_region_seqs:
     input:
         paf = rules.ref_align_extracted_sequences.output.paf
     output:
-        tsv = WD.joinpath(
+        tsv = SUB_WD.joinpath(
             "region_alignments",
             "{sample}.{ref}.chrY-regions-realigned.norm-paf.tsv.gz"
         )
@@ -102,11 +103,11 @@ rule check_realign_precision:
         tsv = rules.normalize_realigned_region_seqs.output.tsv,
         labels = lambda wildcards: lambda wildcards: WD.joinpath("references", f"{MODULE_REF_LABELINGS[wildcards.ref]}")
     output:
-        tmp = temp(WD.joinpath(
+        tmp = temp(SUB_WD.joinpath(
             "region_alignments",
             "{sample}.{ref}.chrY-regions-realigned.tmp.bed"
         )),
-        bed = WD.joinpath(
+        bed = SUB_WD.joinpath(
             "region_alignments",
             "{sample}.{ref}.chrY-regions-realigned.bed.gz"
         ),
