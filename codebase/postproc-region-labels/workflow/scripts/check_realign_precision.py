@@ -38,7 +38,29 @@ def parse_command_line():
 
 
 def join_region_labels(alignments, regions):
+    """This function joins (= overlaps) the input
+    regions, i.e. the regions of interest labeled
+    in the reference, with the resulting alignment
+    records of the inferred labeled regions in the
+    de novo assemblies (the query in the PAF) aligned
+    back to the labeled reference.
+    This process is supposed to check if the inferred
+    labels in the de novo assembly / query do
+    actually align to the correct region as annotated
+    in the reference.
 
+    Args:
+        alignments (pandas.DataFrame): _description_
+        regions (pandas.DataFrame): _description_
+
+    Returns:
+        pandas.DataFrame: _description_
+    """
+
+    # as usual for Pyranges interval operations, carry
+    # additional information from the PAF
+    # The 'query' below refers to the regions in the
+    # de novo assemblies with the inferred label.
     iv_align = pr.from_dict(
         {
             "Chromosome": alignments["target_name"].values,
@@ -53,6 +75,8 @@ def join_region_labels(alignments, regions):
         }
     )
 
+    # this is just the reference annotation
+    # set of regions (Y seq. classes)
     iv_regions = pr.from_dict(
         {
             "Chromosome": regions["chrom"].values,
@@ -68,7 +92,17 @@ def join_region_labels(alignments, regions):
 
 
 def compute_asm_seq_length(fasta_header):
+    """compute_asm_seq_length _summary_
 
+    Args:
+        fasta_header (str): fasta seq. header like this "01n_PAR1::HG02040_chrY:0-40573"
+
+    Raises:
+        err: invalid fasta header
+
+    Returns:
+        int: length of the seq., e.g., (40573 - 0) = 40753
+    """
     try:
         seq_coord = fasta_header.split(":")[-1]
         start, end = seq_coord.split("-")
@@ -80,6 +114,16 @@ def compute_asm_seq_length(fasta_header):
 
 
 def add_asm_seq_offset(fasta_header):
+    """add_asm_seq_offset _summary_
+
+    Args:
+        fasta_header (str): fasta seq. header like this "01n_PAR1::HG02040_chrY:0-40573"
+
+    Returns:
+        int: offset, i.e., the start position of the sequence fragment cut out from
+            the entire assembled sequence after inferring the window of the
+            labeled region, e.g. HG02040_chrY:0-40573 = 0
+    """
 
     seq_coord = fasta_header.split(":")[-1]
     start, _ = seq_coord.split("-")
@@ -88,12 +132,28 @@ def add_asm_seq_offset(fasta_header):
 
 
 def add_asm_region_label(fasta_header):
+    """add_asm_region_label _summary_
 
-    label = fasta_header.split("::")[0]
+    Args:
+        fasta_header (str): fasta seq. header like this "01n_PAR1::HG02040_chrY:0-40573"
+
+    Returns:
+        str: region label, e.g., PAR1
+    """
+
+    label = fasta_header.split("::")[0].split("_", 1)[-1]
     return label
 
 
 def add_asm_seq(fasta_header):
+    """add_asm_seq _summary_
+
+    Args:
+        fasta_header (str): fasta seq. header like this "01n_PAR1::HG02040_chrY:0-40573"
+
+    Returns:
+        str: sequence name, e.g., HG02040_chrY
+    """
 
     seq_name = fasta_header.split(":")[2]
     return seq_name
@@ -102,6 +162,9 @@ def add_asm_seq(fasta_header):
 def add_asm_seq_length(joined):
 
     joined["asm_seq_length"] = joined["asm_seq_name"].apply(compute_asm_seq_length)
+    # note that the overlap_pct can be larger than 100
+    # due to breaks/skips in the alignment, but will typically
+    # exceed 100 by only a few points
     joined["overlap_pct"] = (joined["Overlap"] / joined["asm_seq_length"] * 100).round(2)
 
     return joined
@@ -132,9 +195,19 @@ def merge_aligned_regions(joined):
 
     out_regions = []
     for seq_name, alignments in joined.groupby("asm_seq_name"):
+        # this iterates over aggregates like this:
+        # 01n_PAR1::HG02040_chrY:0-40573
+        # i.e., it's labeled sequence fragments
         offset = alignments["asm_seq_offset"].iloc[0]
-        if alignments["Name"].nunique() != 1:
-            if alignments["asm_region_label"].iloc[0] not in alignments["Name"].values:
+
+        align_target_is_unique_name = alignments["Name"].nunique() == 1
+        align_target_is_not_unique_name = not align_target_is_unique_name
+        query_name_in_target = alignments["asm_region_label"].iloc[0] in alignments["Name"].values
+        query_name_not_in_target = not query_name_in_target
+
+        if align_target_is_not_unique_name or query_name_not_in_target:
+            if query_name_not_in_target:
+                # no match at all
                 # two options: if it's a 'color family' match, it's likely just
                 # an alignment artifact (alignment-based matching is not sensitive enough)
                 # otherwise, no clue what the problem is / where the mismatch comes from
@@ -142,6 +215,8 @@ def merge_aligned_regions(joined):
                 matched_names = alignments["Name"]
                 matches_by_family = check_same_color_family(region_label_name, matched_names)
                 if matches_by_family:
+                    # use only 'color' matches, e.g., accept that the aligner
+                    # matches green2 to green3 etc.
                     subset = alignments.loc[matches_by_family, :].copy()
                     orientation = subset.groupby("aln_strand")["Overlap"].sum()
                     orientation = orientation.index[orientation.argmax()]
@@ -170,6 +245,8 @@ def merge_aligned_regions(joined):
             else:
                 # only look at the subset with matching label;
                 # this is a heuristic that ignores alignment artifacts
+                # and effectively changes/reduces the size of the matched
+                # sequence part
                 selector = alignments["Name"] == alignments["asm_region_label"]
                 subset = alignments.loc[selector, :].copy()
                 orientation = subset.groupby("aln_strand")["Overlap"].sum()
@@ -178,7 +255,7 @@ def merge_aligned_regions(joined):
                     "seq": subset["asm_seq"].iloc[0],
                     "start": subset["asm_seq_start"].min() + offset,
                     "end": subset["asm_seq_end"].max() + offset,
-                    "name": subset["Name"].iloc[0], # label, # label
+                    "name": subset["Name"].iloc[0], # label
                     "score": 750,
                     "strand": orientation,
                     "asm_cutout": subset["asm_seq_name"].iloc[0]
@@ -209,15 +286,23 @@ def main():
     args = parse_command_line()
 
     regions = pd.read_csv(args.input_reg, sep="\t", header=0)
+    # to simplify matching, we use the sequence class label as
+    # region name, i.e., switch from 01n_PAR1 to just PAR1
+    regions[["name", "seqclass"]] = regions[["seqclass", "name"]]
     regions.rename({"#chrom": "chrom"}, axis=1, inplace=True)
 
     align = pd.read_csv(args.input_aln, sep="\t", header=0)
 
     joined = join_region_labels(align, regions)
+
     # if any region (labels) do not exist in the assembly,
     # they will be dropped here with only an error message
     missing_labels = joined["asm_seq_name"] == "-1"
     if missing_labels.any():
+        # note here: at this stage, it is not possible with
+        # certainty to say whether or not the missing label
+        # is an actual assembly error or just a recalcitrant
+        # alignment artifact
         label_names = sorted(joined.loc[missing_labels, "Name"].unique())
         sys.stderr.write(
             f"\nWarning: the following region labels are missing in the assembly: {label_names}\n"
