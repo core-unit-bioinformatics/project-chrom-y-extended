@@ -1,0 +1,141 @@
+import pathlib
+
+
+SUB_WD = WD.joinpath("20-color-blocks-compare")
+
+
+GLOBUS_SHARE_CSV_INPUT_DIR = pathlib.Path(
+    PROJECT_CONFIG["remote_hilbert_prefix"],
+    PROJECT_CONFIG["kmer_color_block_compare"]
+).resolve(strict=True)
+
+
+localrules: unzip_kmer_based_color_annotation
+rule unzip_kmer_based_color_annotation:
+    """2025-09-17
+    update after dataset freeze: these annotation data
+    are now shared via Globus directly - read csv input
+    in the subsequent rules from the share location on
+    the file system
+    """
+    input:
+        zip = PROJECT_REPO_ROOT.joinpath(
+            "annotation", "raw", "20250710_ColorBlockComparisonArang_v2.ML.zip",
+        ).resolve(strict=True)
+    output:
+        csv_dir = directory(WD.joinpath("region_kmer_annot", "raw_csv"))
+    shell:
+        "exit 1"
+        "unzip -j -d {output.csv_dir} {input.zip}"
+
+
+localrules: merge_xyy_sample_blocks
+rule merge_xyy_sample_blocks:
+    """Because he is such a cool dude by his own standards,
+    ML put the two chrY copies of the XYY sample HG03456
+    into separate files.
+    Re-merge them here to have the workflow work as before
+    (w/o the HGSVC sample set).
+    """
+    input:
+        #csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
+        csv_dir = GLOBUS_SHARE_CSV_INPUT_DIR
+    output:
+        check = SUB_WD.joinpath("hg03456_xyy_blocks_merged.ok")
+    params:
+        seq1 = GLOBUS_SHARE_CSV_INPUT_DIR.joinpath(
+            "HG03456_HG03456_chrY_1_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        ),
+        seq2 = GLOBUS_SHARE_CSV_INPUT_DIR.joinpath(
+            "HG03456_HG03456_chrY_2_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        ),
+        out = GLOBUS_SHARE_CSV_INPUT_DIR.joinpath(
+            "HG03456_HG03456_chrY_E1b1a1a1a1c1b_ColorBlockRegions.wArang.csv"
+        )
+    run:
+        out_lines = []
+        total_lines = 0
+        assert str(params.seq1) != str(params.seq2)
+        assert params.seq1.resolve(strict=True)
+        assert params.seq2.resolve(strict=True)
+        for csv_file in [params.seq1, params.seq2]:
+            read_header = "_chrY_1_" in str(csv_file)
+            with open(csv_file, "r") as listing:
+                if read_header:
+                    out_lines.append(listing.readline().strip())
+                else:
+                    # skip header of second file
+                    _ = listing.readline()
+                for line in listing:
+                    ln = total_lines
+                    data_part = line.strip().split(",", 1)[-1]
+                    out_lines.append(
+                        f"{ln},{data_part}"
+                    )
+                    total_lines += 1
+        with open(params.out, "w") as dump:
+            _ = dump.write("\n".join(out_lines))
+        with open(output.check, "w"):
+            pass
+    # END OF RUN BLOCK
+
+
+localrules: normalize_kmer_based_color_annotation
+rule normalize_kmer_based_color_annotation:
+    input:
+        xyy_mrg = rules.merge_xyy_sample_blocks.output.check,
+        csv_dir = GLOBUS_SHARE_CSV_INPUT_DIR
+    output:
+        tsv_dir = directory(SUB_WD.joinpath("kmer_annotation", "norm_tsv"))
+    run:
+        import pandas as pd
+        import pathlib as pl
+        import sys
+
+        # from pyutils module
+        # bring to local scope
+        norm_label = normalize_label_name
+
+        for csv_file in pl.Path(input.csv_dir).glob("*.csv"):
+            # the format is of course idiosyncratic
+            file_name = csv_file.name
+            if not any(file_name.startswith(sample) for sample in SAMPLES):
+                sys.stderr.write(f"\nWarning: skipping file - likely not a sample file: {file_name}\n")
+                continue  # skip files that do not match any sample name
+            if "_chrY_1_" in file_name or "_chrY_2_" in file_name:
+                sys.stderr.write(f"\nSkipping unmerged HG03456-XYY: {file_name}\n")
+                continue  # see previous rule
+            new_tsv = []
+            sample_name = csv_file.stem.split("_")[0]
+            with open(csv_file, "r", encoding="ascii") as table_like:
+                _ = table_like.readline()  # skip header
+                for line in table_like:
+                    columns = line.strip().split(",")
+                    seq_name = columns[1]
+                    region_start = int(columns[3])
+                    region_end = int(columns[4])
+                    # fix LOFTUS-coding...
+                    region_label = norm_label(columns[5])
+                    orientation = columns[6]
+                    if orientation == "sense":
+                        orientation = "+"
+                    elif orientation == "antisense":
+                        orientation = "-"
+                    else:
+                        raise ValueError(f"Unknown orientation: {orientation}")
+                    row = (seq_name, region_start, region_end, region_label, 1000, orientation)
+                    new_tsv.append(row)
+            new_tsv = pd.DataFrame(
+                new_tsv,
+                columns=["#seq_name", "start", "end", "name", "score", "strand"]
+            )
+            new_tsv.sort_values(["#seq_name", "start"], inplace=True)
+            out_file = pl.Path(output.tsv_dir).joinpath(f"{sample_name}.chrY-colorblock-kmers.bed")
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            new_tsv.to_csv(out_file, sep="\t", index=False, header=True)
+    # END OF RUN BLOCK
+
+
+rule run_all_colorblocks_compare:
+    input:
+        norm_dir = rules.normalize_kmer_based_color_annotation.output.tsv_dir

@@ -24,6 +24,9 @@ def _init_label_cache():
 def normalize_label_name(label_name, reference="all"):
     """Normalize label name to a standard form.
 
+    This is used in
+    rules::20_color_blocks_compare::normalize_kmer_based_color_annotation
+
     Args:
         label_name (str): The label name to normalize.
         reference (str): The reference genome to use for normalization.
