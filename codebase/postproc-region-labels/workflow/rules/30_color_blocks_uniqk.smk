@@ -34,7 +34,7 @@ localrules: normalize_color_unique_kmer_counts
 rule normalize_color_unique_kmer_counts:
     input:
         #bed_dir = rules.unzip_color_unique_kmer_counts.output.bed_dir
-        bed_dir = GLOBUS_SHARE_BED_INPUT_DIR
+        bed_dir = ancient(GLOBUS_SHARE_BED_INPUT_DIR)
     output:
         tsv_dir = directory(SUB_WD.joinpath("kmer_annotation", "norm_tsv"))
     run:

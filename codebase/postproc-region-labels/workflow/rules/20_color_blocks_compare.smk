@@ -52,7 +52,7 @@ rule merge_xyy_sample_blocks:
     """
     input:
         #csv_dir = rules.unzip_kmer_based_color_annotation.output.csv_dir
-        csv_dir = GLOBUS_SHARE_CSV_INPUT_DIR
+        csv_dir = ancient(GLOBUS_SHARE_CSV_INPUT_DIR)
     output:
         check = SUB_WD.joinpath("hg03456_xyy_blocks_merged.ok")
     params:
