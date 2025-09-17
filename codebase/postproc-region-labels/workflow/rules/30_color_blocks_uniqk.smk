@@ -124,6 +124,6 @@ rule normalize_color_unique_kmer_counts:
     # END OF RUN BLOCK
 
 
-rule run_all_colorblocks_compare:
+rule run_all_colorblocks_uniqk:
     input:
         norm_dir = rules.normalize_color_unique_kmer_counts.output.tsv_dir
