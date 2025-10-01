@@ -25,10 +25,14 @@ rule merge_aln_and_kmer_annotation:
             "codebase", "postproc-region-labels", "workflow",
             "scripts", "merge_kmer_annotation.py"
         ).resolve(strict=True),
+        # 20-postprocess-labels/20-color-blocks-compare/kmer_annotation/norm_tsv/
+        # NA21093.chrY-colorblock-kmers.bed
         kmer_strand_info = lambda wildcards, input: pathlib.Path(
             input.strand_kmer_tsv,
-            f"{wildcards.sample}.chrY-regions-kmer-annot.bed"
+            f"{wildcards.sample}.chrY-colorblock-kmers.bed"
         ),
+        # 20-postprocess-labels/30-color-blocks-uniqk/kmer_annotation/norm_tsv/
+        # NA21093_chrY-regions_uniq-kmer-counts.tsv
         kmer_color_info = lambda wildcards, input: pathlib.Path(
             input.uniq_color_kmer_tsv,
             f"{wildcards.sample}_chrY-regions_uniq-kmer-counts.tsv"
