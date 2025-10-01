@@ -16,9 +16,9 @@
       ],
       "nb_cache_subfolder": "codebase/.cache",
       "hilbert_wf_seqann_folder": "projects/medbioinf/projects/cubi/projects/chrom-y-extended/workflows/wf-seqann/wd",
-      "hmmer_filtered_dyz19": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250625_hmmer-filtered-hits/dyz19hmmerFilter",
-      "hmmer_filtered_tspy": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250625_hmmer-filtered-hits/tspyhmmerFilter",
-      "hmmer_filtered_yq12": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250625_hmmer-filtered-hits/yq12hmmerFilter",
+      "hmmer_filtered_dyz19": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_hmmer-filtered-hits/dyz19hmmerFilter",
+      "hmmer_filtered_tspy": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_hmmer-filtered-hits/tspyhmmerFilter",
+      "hmmer_filtered_yq12": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_hmmer-filtered-hits/yq12hmmerFilter",
       "kmer_color_block_compare": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_ColorBlockAnnotations",
       "kmer_color_blocks_uniqk": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250910_ColorBlock_BEDfiles"
     }
