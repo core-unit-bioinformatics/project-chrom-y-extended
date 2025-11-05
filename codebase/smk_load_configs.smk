@@ -52,7 +52,7 @@ SAMPLE_SHEETS = {
     "vrk_chrom": load_sample_sheet("verkko_sex_chrom", PROJECT_REPO_ROOT),
     "vrk_chrY_arhie": load_sample_sheet("verkko_chrY_arhie-v2", PROJECT_REPO_ROOT),
     "vrk_chrY_arhie_freeze": load_sample_sheet("verkko_chrY_arhie_freeze", PROJECT_REPO_ROOT),
-    "vrk_chrY_arhie_freeze.assm-qc": load_sample_sheet("vrk_chrY_arhie_freeze.assm-qc", PROJECT_REPO_ROOT)
+    "vrk_chrY_arhie_freeze.assm-qc": load_sample_sheet("verkko_chrY_arhie_freeze.assm-qc", PROJECT_REPO_ROOT)
 }
 
 SUBFOLDERS = {
