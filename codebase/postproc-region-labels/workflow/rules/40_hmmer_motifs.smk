@@ -45,6 +45,7 @@ rule normalize_filtered_hmmer_hits:
                     "hmmer_filtered_hits", f"{motif_name}",
                     f"{sample}.{motif_name}.chrY-hmmer-filtered-hits.bed"
                 )
+                out_file.parent.mkdir(exist_ok=True, parents=True)
                 bed_df.to_csv(out_file, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
