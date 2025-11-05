@@ -35,6 +35,7 @@ include: "rules/20_color_blocks_compare.smk"
 include: "rules/30_color_blocks_uniqk.smk"
 include: "rules/40_hmmer_motifs.smk"
 include: "rules/50_merging.smk"
+include: "rules/60_prep_qc_files.smk"
 
 
 localrules: draft_summary_region_annotation
