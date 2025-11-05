@@ -2,6 +2,7 @@
 SUB_WD = WD.joinpath("60-qc-prep")
 
 
+localrules: filter_sequences_to_sex_chrom
 rule filter_sequences_to_sex_chrom:
     input:
         bed = rules.merge_aln_and_kmer_annotation.output.bed,
