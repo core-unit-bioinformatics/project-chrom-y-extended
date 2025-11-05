@@ -10,7 +10,7 @@ THIS_MODULE = "postproc-region-labels"
 MODULE_SUBFOLDER = SUBFOLDERS[THIS_MODULE]
 WD = pathlib.Path(MODULE_SUBFOLDER)
 
-SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie_freeze"]
+SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie_freeze.assm-qc"]
 SAMPLES=SAMPLE_SHEET.index.values
 
 WF_SEQANN_WD = pathlib.Path(
