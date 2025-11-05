@@ -32,6 +32,8 @@ rule normalize_filtered_hmmer_hits:
         )
     run:
 
+        _MODULE_SUB_WD = WD.joinpath("40-hmmer-motifs")
+
         for folder in input.hmmer_filtered:
             folder = pathlib.Path(folder).resolve(strict=True)
             motif_name = folder.name.replace("hmmerFilter", "")
@@ -41,7 +43,25 @@ rule normalize_filtered_hmmer_hits:
                     continue
                 sample = csv_file.name.split(".")[0]
                 bed_df = load_ml_motif_hits(csv_file, motif_name)
-                out_file = SUB_WD.joinpath(
+
+                # === educational error
+                # this is the original code:
+                #
+                # out_file = SUB_WD.joinpath(
+                #     "hmmer_filtered_hits", f"{motif_name}",
+                #     f"{sample}.{motif_name}.chrY-hmmer-filtered-hits.bed"
+                # )
+                #
+                # Executing this does not lead to unexpected behavior as long
+                # as the (presumed module-level) constant SUB_WD is not changed
+                # in any Snakemake module that is read after this one. If that
+                # happens, then the value of SUB_WD is overridden in the
+                # workflow's global namespace and used here in the run context.
+                # There are several ways of working around that, but the most
+                # important message here is that module-level constants should
+                # be set to an 'unexpected' value (e.g., None) at the end of each
+                # module to raise early in downstream use.
+                out_file = _MODULE_SUB_WD.joinpath(
                     "hmmer_filtered_hits", f"{motif_name}",
                     f"{sample}.{motif_name}.chrY-hmmer-filtered-hits.bed"
                 )
