@@ -198,6 +198,6 @@ rule run_all_prep_qc:
             sample=SAMPLES
         ),
         qc_labels = expand(
-            rules.merge_qc_track_intersections.output.tsv
+            rules.merge_qc_track_intersections.output.tsv,
             sample=SAMPLES
         )
