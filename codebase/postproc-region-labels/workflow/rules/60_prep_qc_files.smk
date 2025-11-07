@@ -213,7 +213,12 @@ rule compute_qc_track_stats:
         def is_main_assembly(seqname):
             """main assembly ~ a complete Y chromosome"""
             parts = seqname.split("_")
-            is_main = len(parts) == 2 and parts[1] == "chrY"
+            # special workaround for sample HG03456
+            # which is XYY
+            if wildcards.sample == "HG03456":
+                is_main = len(parts) == 3 and parts[1] == "chrY" and parts[2] in ["1", "2"]
+            else:
+                is_main = len(parts) == 2 and parts[1] == "chrY"
             return 1 if is_main else 0
 
         def compute_seq_stats(df):
