@@ -190,6 +190,133 @@ rule merge_qc_track_intersections:
     # END OF RUN BLOCK
 
 
+localrules: compute_qc_track_stats
+rule compute_qc_track_stats:
+    """TODO
+    potentially; long run block, migrate to script
+    """
+    input:
+        tsv = rules.merge_qc_track_intersections.output.tsv
+    output:
+        json = SUB_WD.joinpath("results", "{sample}_qclabels.win-1k.stats.json")
+    run:
+        import pandas as pd
+        import json
+        import functools as fnt
+
+        def pct(enum, denom):
+            """utility"""
+            res = round(enum/denom*100,3)
+            return res
+
+        @fnt.lru_cache(maxsize=128)
+        def is_main_assembly(seqname):
+            """main assembly ~ a complete Y chromosome"""
+            parts = seqname.split("_")
+            is_main = len(parts) == 2 and parts[1] == "chrY"
+            return 1 if is_main else 0
+
+        def compute_seq_stats(df):
+            """basic descriptives of what has been assembled"""
+            total_length = sum(df.groupby("seq")["end"].max())
+            main_length = sum(df.loc[df["is_main"] > 0, :].groupby("seq")["end"].max())
+            num_seqs = df["seq"].nunique()
+            pct_main = pct(main_length, total_length)
+            seq_stats = {
+                "num_seqs": int(num_seqs),
+                "total_length": int(total_length),
+                "main_length": int(main_length),
+                "pct_main": float(pct_main)
+            }
+            return seq_stats
+
+        def summarize_qc_labels(df):
+            """descriptive stats per QC label/tool
+            Focus on clean / not flagged
+            """
+            flg = df["flagger_is_clean"]
+            ncf = df["nucflag_is_clean"]
+
+            total = df.shape[0]
+            both_clean = sum(flg & ncf)
+            any_clean = sum(flg | ncf)
+            flg_only_clean = sum(flg & ~ncf)
+            ncf_only_clean = sum(~flg & ncf)
+
+            label_stats = {
+                "total_windows": total,
+                "clean_both_n": both_clean,
+                "clean_both_pct": pct(both_clean, total),
+                "clean_any_n": any_clean,
+                "clean_any_pct": pct(any_clean, total),
+                "clean_flagger_only_n": flg_only_clean,
+                "clean_flagger_only_pct": pct(flg_only_clean, total),
+                "clean_nucflag_only_n": ncf_only_clean,
+                "clean_nucflag_only_pct": pct(ncf_only_clean, total)
+            }
+            return label_stats
+
+        def summarize_by_location(df):
+            """nb: passed df is just a view, hence copy subset"""
+            agg_df = df[["rank_bin", "flagger_is_clean", "nucflag_is_clean"]].copy()
+            agg_df["joined"] = agg_df["flagger_is_clean"] + agg_df["nucflag_is_clean"]
+
+            agg_flags = agg_df.groupby("rank_bin")["joined"].value_counts().reset_index(drop=False)
+
+            agg_totals = agg_df.groupby("rank_bin").size().reset_index(drop=False)
+            agg_totals.columns = ["rank_bin", "bin_total"]
+
+            agg_flags = agg_flags.merge(agg_totals, on="rank_bin", how="outer")
+            agg_flags["state_pct"] = (agg_flags["count"].divide(agg_flags["bin_total"]) * 100).round(3)
+
+            agg_flags["label"] = agg_flags["joined"].replace(
+                {
+                    2: "clean_both", 1: "clean_any", 0: "clean_not"
+                }, inplace=False
+            )
+
+            loc_stats = {}
+            for rank_bin, bin_stats in agg_flags.groupby("rank_bin"):
+                tmp_stats = {
+                    "total_windows": int(bin_stats.bin_total.iloc[0])
+                }
+                for idx in [0,1,2]:
+                    try:
+                        l = bin_stats.label.iloc[idx]
+                        tmp_stats[f"{l}_n"] = int(bin_stats["count"].iloc[idx])
+                        tmp_stats[f"{l}_pct"] = float(bin_stats.state_pct.iloc[idx])
+                    except IndexError:
+                        # not all labels exist
+                        pass
+                loc_stats[rank_bin] = tmp_stats
+
+            return loc_stats
+
+        qc = pd.read_csv(input.tsv, sep="\t", header=0)
+        qc["is_main"] = qc["seq"].apply(is_main_assembly)
+
+        sample_stats = {"sample": wildcards.sample}
+        sample_stats.update(compute_seq_stats(qc))
+        for subset in ["all", "main"]:
+            if subset == "all":
+                eval_df = qc
+            else:
+                eval_df = qc.loc[qc["is_main"] > 0, :]
+            sample_stats.update(
+                {("by-label", subset): summarize_qc_labels(eval_df)}
+            )
+            sample_stats.update(
+                {("by-location", subset): summarize_by_location(eval_df)}
+            )
+
+        with open(output.json, "w") as dump:
+            json.dump(sample_stats, dump,
+            ensure_ascii=True, check_circular=True,
+            indent=2
+            )
+    # END OF RUN BLOCK
+
+
 rule run_all_prep_qc:
     input:
         qc_beds = expand(
@@ -197,7 +324,7 @@ rule run_all_prep_qc:
             qc_track=["flagger", "nucflag"],
             sample=SAMPLES
         ),
-        qc_labels = expand(
-            rules.merge_qc_track_intersections.output.tsv,
+        qc_stats = expand(
+            rules.compute_qc_track_stats.output.json,
             sample=SAMPLES
         )
