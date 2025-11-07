@@ -303,10 +303,10 @@ rule compute_qc_track_stats:
             else:
                 eval_df = qc.loc[qc["is_main"] > 0, :]
             sample_stats.update(
-                {("by-label", subset): summarize_qc_labels(eval_df)}
+                {f"by-label|{subset}": summarize_qc_labels(eval_df)}
             )
             sample_stats.update(
-                {("by-location", subset): summarize_by_location(eval_df)}
+                {f"by-location|{subset}": summarize_by_location(eval_df)}
             )
 
         with open(output.json, "w") as dump:
