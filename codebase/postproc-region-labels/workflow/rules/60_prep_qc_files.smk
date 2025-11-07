@@ -161,7 +161,7 @@ rule normalize_qc_track_intersections:
         qc_regions = simplify_labeling(qc_regions)
         qc_regions = compute_window_ranking(qc_regions)
         qc_regions.sort_values(["seq", "start", "end"], inplace=True)
-        qc_regions.to_csv(output.tsv, sep="\t", header=True index=False)
+        qc_regions.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
