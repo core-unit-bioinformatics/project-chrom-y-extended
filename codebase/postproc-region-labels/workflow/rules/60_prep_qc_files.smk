@@ -185,9 +185,10 @@ rule merge_qc_track_intersections:
 
         merge = qc1.join(qc2, how="outer")
         assert merge.shape[0] == qc1.shape[0] == qc2.shape[0]
+        merge.reset_index(drop=False, inplace=True)
         merge.rename({"seq": "#seq"}, axis=1, inplace=True)
 
-        merge.to_csv(output.tsv, sep="\t", header=True, index=True)
+        merge.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
