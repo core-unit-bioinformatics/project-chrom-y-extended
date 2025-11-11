@@ -185,6 +185,7 @@ rule merge_qc_track_intersections:
 
         merge = qc1.join(qc2, how="outer")
         assert merge.shape[0] == qc1.shape[0] == qc2.shape[0]
+        merge.rename({"seq": "#seq"}, axis=1, inplace=True)
 
         merge.to_csv(output.tsv, sep="\t", header=True, index=True)
     # END OF RUN BLOCK
@@ -223,9 +224,9 @@ rule compute_qc_track_stats:
 
         def compute_seq_stats(df):
             """basic descriptives of what has been assembled"""
-            total_length = sum(df.groupby("seq")["end"].max())
+            total_length = sum(df.groupby("#seq")["end"].max())
             main_length = sum(df.loc[df["is_main"] > 0, :].groupby("seq")["end"].max())
-            num_seqs = df["seq"].nunique()
+            num_seqs = df["#seq"].nunique()
             pct_main = pct(main_length, total_length)
             seq_stats = {
                 "num_seqs": int(num_seqs),
@@ -298,7 +299,7 @@ rule compute_qc_track_stats:
             return loc_stats
 
         qc = pd.read_csv(input.tsv, sep="\t", header=0)
-        qc["is_main"] = qc["seq"].apply(is_main_assembly)
+        qc["is_main"] = qc["#seq"].apply(is_main_assembly)
 
         sample_stats = {"sample": wildcards.sample}
         sample_stats.update(compute_seq_stats(qc))
