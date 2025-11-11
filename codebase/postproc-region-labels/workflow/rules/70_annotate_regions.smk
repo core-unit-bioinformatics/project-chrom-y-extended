@@ -19,7 +19,7 @@ rule intersect_labels_and_qc:
 rule run_all_annotate_regions:
     input:
         mrg_aln_kmer = expand(
-            rules.intersect_labels_and_qc.output.tsv,
+            rules.intersect_labels_and_qc.output.isect,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
