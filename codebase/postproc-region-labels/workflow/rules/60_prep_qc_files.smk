@@ -27,6 +27,16 @@ rule filter_sequences_to_sex_chrom:
         selector = qc_flagged_regions["seq"].isin(known_seqs)
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
         assert not qc_flagged_regions.empty, f"No seqs selected: {known_seqs}"
+        # update: Glennis Logsdon said it is ok to filter out HET
+        # labels from the NucFlag tracks because these do not really
+        # indicate errors.
+        if wildcards.qc_track == "nucflag":
+            input_size = qc_flagged_regions.shape[0]
+            qc_flagged_regions = qc_flagged_regions.loc[
+                qc_flagged_regions["label"] != "HET", :
+            ].copy()
+            mod_size = qc_flagged_regions.shape[0]
+            assert mod_size < input_size
         qc_flagged_regions.sort_values(["seq", "start", "end"], inplace=True)
         qc_flagged_regions.rename({"seq": "#seq"}, axis=1, inplace=True)
         qc_flagged_regions.to_csv(output.bed, sep="\t", header=True, index=False)
