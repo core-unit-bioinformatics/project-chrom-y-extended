@@ -236,7 +236,7 @@ rule compute_qc_track_stats:
         def compute_seq_stats(df):
             """basic descriptives of what has been assembled"""
             total_length = sum(df.groupby("#seq")["end"].max())
-            main_length = sum(df.loc[df["is_main"] > 0, :].groupby("seq")["end"].max())
+            main_length = sum(df.loc[df["is_main"] > 0, :].groupby("#seq")["end"].max())
             num_seqs = df["#seq"].nunique()
             pct_main = pct(main_length, total_length)
             seq_stats = {
