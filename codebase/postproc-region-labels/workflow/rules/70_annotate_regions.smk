@@ -22,7 +22,7 @@ rule create_gap_track:
         sizes = rules.dump_genome_seq_sizes.output.tsv,
         regions = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed
     output:
-        bed = SUB_WD.joinpath("suppl", "gap_tracks", "{sample}_gaps.bed")
+        bed = SUB_WD.joinpath("suppl", "gap_tracks", "{sample}.{ref}.gaps.bed")
     conda:
         GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     shell:
