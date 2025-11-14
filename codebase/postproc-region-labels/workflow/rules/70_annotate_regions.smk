@@ -35,9 +35,31 @@ rule merge_gaps_into_seqclass_labels:
         labels = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed,
         gaps = rules.create_gap_track.output.bed
     output:
-        bed = SUB_WD.joinpath("suppl", "seqclass_gaps", "{sample}.{ref}.chrY-regions.gaps.tsv")
+        tsv = SUB_WD.joinpath("suppl", "seqclass_gaps", "{sample}.{ref}.chrY-regions.gaps.tsv")
     run:
-        raise
+        import pandas as pd
+        gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
+
+        gaps["name"] = "GAP"
+        gaps["score"] = 0
+        gaps["strand"] = "."
+        gaps["thickStart"] = gaps["start"]
+        gaps["thickEnd"] = gaps["end"]
+        gaps["assign_method"] = "complement"
+        gaps["second_best_guess"] = "GAP"
+        gaps["kmer_top_enrich"] = 0.
+        gaps["other_support"] = "none"
+        gaps["other_orientation"] = "."
+        gaps["cluster_id"] = -1
+
+        labels = pd.read_csv(input.labels, sep="\t", header=0)
+        labels = pd.concat([labels, gaps], axis=0, ignore_index=False)
+        labels.sort_values(["#seq", "start", "end"], inplace=True)
+
+        assert not pd.isnull(labels).any(axis=0).any()
+
+        labels.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
 
 
 rule intersect_labels_and_qc:
