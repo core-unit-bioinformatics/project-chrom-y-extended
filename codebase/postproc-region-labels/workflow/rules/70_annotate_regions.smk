@@ -65,7 +65,7 @@ rule merge_gaps_into_seqclass_labels:
 rule intersect_labels_and_qc:
     input:
         qc_win = rules.merge_qc_track_intersections.output.tsv,
-        labels = rules.merge_gaps_into_seqclass_labels.output.bed
+        labels = rules.merge_gaps_into_seqclass_labels.output.tsv
     output:
         isect = SUB_WD.joinpath("suppl", "label_qc_isect", "{sample}.{ref}.chrY-regions.qc-win.isect.tsv")
     conda:
