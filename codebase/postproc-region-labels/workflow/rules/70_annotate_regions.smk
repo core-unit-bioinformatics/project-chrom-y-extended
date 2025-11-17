@@ -112,12 +112,13 @@ rule set_error_windows:
 
         add_error_regions = []
         drop_rows = []
-        for row in df.itertuples(index=False):
+        for row in df.itertuples(index=True):
             # Decision from chrY call on Nov. 11.
             # only consider windows flagged by both
             # tools (strict criterion) as true errors
             if row.error_strict == 1:
                 new_row = row._asdict()
+                del new_row["Index"]
                 # change seq coord to window coord
                 new_row["start"] = row.win_start
                 new_row["end"] = row.win_end
