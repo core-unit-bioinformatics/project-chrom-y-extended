@@ -134,6 +134,9 @@ rule set_error_windows:
         df.drop(drop_rows, axis=0, inplace=True)
 
         add_error_regions = pd.DataFrame.from_records(add_error_regions)
+        # the mix-in of the curated hmmer calls can lead to duplicates;
+        # drop them and arbitrarily keep the first error windows
+        add_error_regions.drop_duplicates(["seq", "start", "end"], keep="first", inplace=True)
         df = pd.concat([df, add_error_regions], axis=0, ignore_index=False)
         df.sort_values(["seq", "start", "end"], axis=0, inplace=True)
         df.to_csv(output.tsv, sep="\t", header=True, index=False)
