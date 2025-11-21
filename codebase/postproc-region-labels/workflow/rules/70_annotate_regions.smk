@@ -153,6 +153,8 @@ rule label_and_merge_windows:
         tsv = SUB_WD.joinpath(
             "suppl", "win_merge_debug", "{sample}.{ref}.chrY-regions.err-strict.debug.tsv"
         )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     params:
