@@ -2,10 +2,6 @@
 SUB_WD = WD.joinpath("70-annotate-regions")
 
 
-localrules:
-rule
-
-
 localrules: dump_genome_seq_sizes
 rule dump_genome_seq_sizes:
     input:
