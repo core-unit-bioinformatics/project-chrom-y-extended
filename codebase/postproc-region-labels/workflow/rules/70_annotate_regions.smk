@@ -2,6 +2,10 @@
 SUB_WD = WD.joinpath("70-annotate-regions")
 
 
+localrules:
+rule
+
+
 localrules: dump_genome_seq_sizes
 rule dump_genome_seq_sizes:
     input:
@@ -143,10 +147,31 @@ rule set_error_windows:
     # END OF RUN BLOCK
 
 
+rule label_and_merge_windows:
+    input:
+        tsv = rules.set_error_windows.output.tsv
+    output:
+        bed = SUB_WD.joinpath(
+            "results", "seq_class", "{sample}.{ref}.chrY-regions.err-strict.bed"
+        ),
+        tsv = SUB_WD.joinpath(
+            "suppl", "win_merge_debug", "{sample}.{ref}.chrY-regions.err-strict.debug.tsv"
+        )
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "finalize_labels.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --isect-table {input.tsv} --output {output.bed} --debug-out {output.tsv}"
+
+
 rule run_all_annotate_regions:
     input:
-        err_win = expand(
-            rules.set_error_windows.output.tsv,
+        label_beds = expand(
+            rules.label_and_merge_windows.output.bed,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
