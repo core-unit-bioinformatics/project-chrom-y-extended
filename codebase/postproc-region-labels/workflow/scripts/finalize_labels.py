@@ -2,9 +2,8 @@
 
 import argparse as argp
 import collections as col
-import functools as fnt
-import itertools as itt
 import pathlib as pl
+import re
 
 import pandas as pd
 import pyranges as pyr
@@ -367,7 +366,7 @@ def window_to_debug_region(window):
     if primary_label == "ERR":
         score = 0
         strand = "+"
-    if primary_label == "GAP":
+    if primary_label == "UNASSIGNED":
         score = 500
         strand = "+"
 
@@ -415,6 +414,24 @@ def merge_clustered_windows(clustered_windows):
     return final_regions
 
 
+def simplify_color_block_labels(label):
+    colors = "(" + "|".join(["blue", "red", "green", "yellow", "gray"]) +")"
+    mobj = re.search(colors, label)
+    if mobj is None:
+        return label
+    s,e = mobj.span()
+    color = label[s:e]
+    qualifier = "(plus|IR[0-9])"
+    mobj = re.search(qualifier, label)
+    if mobj is not None:
+        s, e = mobj.span()
+        qual = label[s:e]
+        new_label = f"{color}-{qual}"
+    else:
+        new_label = color
+    return new_label
+
+
 def main():
 
     args = parse_command_line()
@@ -425,6 +442,8 @@ def main():
     # simplify: drop score zero / check w/ Pille
     drop_names = ["uncertain", "TSPY-small", "TSPY-large"]
     isect_table = isect_table.loc[~isect_table["name"].isin(drop_names), :].copy()
+    isect_table["name"] = isect_table["name"].apply(simplify_color_block_labels)
+    isect_table["second_best_guess"] = isect_table["second_best_guess"].apply(simplify_color_block_labels)
 
     debug_output = assign_label_per_window(isect_table)
     args.debug_out.parent.mkdir(exist_ok=True, parents=True)

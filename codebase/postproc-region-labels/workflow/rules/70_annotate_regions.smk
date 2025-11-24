@@ -40,13 +40,13 @@ rule merge_gaps_into_seqclass_labels:
         import pandas as pd
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
 
-        gaps["name"] = "GAP"
+        gaps["name"] = "UNASSIGNED"
         gaps["score"] = 0
         gaps["strand"] = "."
         gaps["thickStart"] = gaps["start"]
         gaps["thickEnd"] = gaps["end"]
         gaps["assign_method"] = "complement"
-        gaps["second_best_guess"] = "GAP"
+        gaps["second_best_guess"] = "UNASSIGNED"
         gaps["kmer_top_enrich"] = 0.
         gaps["other_support"] = "none"
         gaps["other_orientation"] = "."
@@ -127,8 +127,8 @@ rule set_error_windows:
                 new_row["second_best_guess"] = "ERR"
                 new_row["assign_method"] = "qcflag"
                 add_error_regions.append(new_row)
-                if row.name == "GAP":
-                    # GAPs that are labeled as errors can
+                if row.name == "UNASSIGNED":
+                    # unassigned blocks that are labeled as errors can
                     # just be dropped from the list of regions
                     drop_rows.append(row.Index)
         df.drop(drop_rows, axis=0, inplace=True)
