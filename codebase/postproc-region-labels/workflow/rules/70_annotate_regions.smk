@@ -9,11 +9,14 @@ rule dump_genome_seq_sizes:
     output:
         tsv = SUB_WD.joinpath("suppl", "genome_sizes", "{sample}.seq-sizes.tsv")
     run:
+        seq_sizes = []
         with open(input.bed) as regions:
-            with open(output.tsv, "w") as sizes:
-                for line in regions:
-                    columns = line.strip().split()
-                    sizes.write(f"{columns[0]}\t{columns[2]}\n")
+            for line in regions:
+                columns = line.strip().split()
+                seq_sizes.append((columns[0], columns[2]))
+        with open(output.tsv, "w") as sizes:
+            for name, size in sorted(seq_sizes):
+                sizes.write(f"{name}\t{size}\n")
     # END OF RUN BLOCK
 
 
