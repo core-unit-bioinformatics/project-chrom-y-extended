@@ -23,8 +23,8 @@ rule compute_label_dist_stats:
         labels = pd.read_csv(input.labels, header=0, sep="\t")
         labels["length"] = labels["end"] - labels["start"]
 
-        agg = labels.groupby(["seq", "name"])["length"].sum().reset_index(drop=False, inplace=False)
-        agg["seq_length"] = agg["seq"].replace(seq_sizes, inplace=False)
+        agg = labels.groupby(["#seq", "name"])["length"].sum().reset_index(drop=False, inplace=False)
+        agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False)
         agg["pct_cov"] = (agg["length"] / agg["seq_length"] * 100).round(3)
 
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
