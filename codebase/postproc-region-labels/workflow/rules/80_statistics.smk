@@ -15,7 +15,7 @@ rule compute_label_dist_stats:
         import pandas as pd
 
         seq_sizes = {
-            (row.seq, row.length) for row in
+            (row.seq, int(row.length)) for row in
             (pd.read_csv(
                 input.gsize, header=None, sep="\t", names=["seq", "length"]
             )).itertuples()
@@ -24,7 +24,7 @@ rule compute_label_dist_stats:
         labels["length"] = labels["end"] - labels["start"]
 
         agg = labels.groupby(["#seq", "name"])["length"].sum().reset_index(drop=False, inplace=False)
-        agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False)
+        agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False).astype(int)
         agg["pct_cov"] = (agg["length"] / agg["seq_length"] * 100).round(3)
 
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
