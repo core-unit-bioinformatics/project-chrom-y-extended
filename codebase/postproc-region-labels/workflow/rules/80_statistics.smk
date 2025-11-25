@@ -1,7 +1,7 @@
 
 SUB_WD = WD.joinpath("80-statistics")
 
-
+localrules: compute_label_dist_stats
 rule compute_label_dist_stats:
     input:
         labels = rules.label_and_merge_windows.output.bed,
@@ -23,8 +23,10 @@ rule compute_label_dist_stats:
         labels = pd.read_csv(input.labels, header=0, sep="\t")
         labels["length"] = labels["end"] - labels["start"]
 
+        print(seq_sizes)
         agg = labels.groupby(["#seq", "name"])["length"].sum().reset_index(drop=False, inplace=False)
-        agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False).astype(int)
+        print(agg)
+        agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False)
         agg["pct_cov"] = (agg["length"] / agg["seq_length"] * 100).round(3)
 
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
