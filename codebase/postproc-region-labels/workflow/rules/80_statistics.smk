@@ -34,7 +34,7 @@ rule compute_label_dist_stats:
         # aggregate on all-seq level
         agg2 = labels.groupby("name")["length"].sum().reset_index(drop=False, inplace=False)
         agg2["total_pct_cov"] = (agg2["length"] / total_length * 100).round(5)
-        agg2.set_index("name", inplace=True)
+        agg2 = agg2.set_index("name", inplace=False).to_dict()["total_pct_cov"]
 
         agg["total_pct_cov"] = agg["name"].replace(agg2, inplace=False).astype(float)
 
