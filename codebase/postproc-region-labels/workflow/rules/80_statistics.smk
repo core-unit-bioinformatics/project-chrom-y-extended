@@ -24,10 +24,19 @@ rule compute_label_dist_stats:
         )
         labels = pd.read_csv(input.labels, header=0, sep="\t")
         labels["length"] = labels["end"] - labels["start"]
+        total_length = sum(seq_sizes.values())
 
+        # aggregate on per-seq level
         agg = labels.groupby(["#seq", "name"])["length"].sum().reset_index(drop=False, inplace=False)
         agg["seq_length"] = agg["#seq"].replace(seq_sizes, inplace=False).astype(int)
-        agg["pct_cov"] = (agg["length"] / agg["seq_length"] * 100).round(3)
+        agg["seq_pct_cov"] = (agg["length"] / agg["seq_length"] * 100).round(5)
+
+        # aggregate on all-seq level
+        agg2 = labels.groupby("name")["length"].sum().reset_index(drop=False, inplace=False)
+        agg2["total_pct_cov"] = (agg2["length"] / total_length * 100).round(5)
+        agg2.set_index("name", inplace=True)
+
+        agg["total_pct_cov"] = agg["name"].replace(agg2, inplace=False).astype(float)
 
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
