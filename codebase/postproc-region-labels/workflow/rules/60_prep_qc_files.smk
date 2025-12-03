@@ -222,7 +222,7 @@ rule merge_qc_track_intersections:
         tsv = SUB_WD.joinpath("suppl", "merge_qc", "{sample}_qclabels.win-1k.tsv"),
     run:
         import pandas as pd
-        assert len(input.tables) == 2
+        assert len(input.tables) == len(QC_TRACKS)
 
         use_index = ["seq", "start", "end", "window", "rank_bin"]
         qc1 = pd.read_csv(input.tables[0], sep="\t", header=0, index_col=use_index)
