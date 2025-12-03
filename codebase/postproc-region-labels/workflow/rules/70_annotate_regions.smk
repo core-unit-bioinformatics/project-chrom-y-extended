@@ -121,7 +121,7 @@ rule set_error_windows:
         select_nucflag_hifi_dirty = df["nucflag_hifi_is_clean"] == 0  # False / not clean
         select_nucflag_ont_dirty = df["nucflag_ont_is_clean"] == 0  # False / not clean
 
-        # strict: require error flag from both tools
+        # strict: require error flag from all tools
         select_strict_dirty = (
             select_flagger_hifi_dirty
             &
