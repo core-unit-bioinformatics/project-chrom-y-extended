@@ -13,6 +13,10 @@ WD = pathlib.Path(MODULE_SUBFOLDER)
 SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie_freeze.assm-qc"]
 SAMPLES=SAMPLE_SHEET.index.values
 
+wildcard_constraints:
+    sample = "(" + "|".join(SAMPLES) + ")",
+    qc_track = "(" + "|".join(["flagger_hifi", "flagger_ont", "nucflag_hifi", "nucflag_ont"]) + ")"
+
 WF_SEQANN_WD = pathlib.Path(
     PROJECT_CONFIG["remote_hilbert_prefix"],
     PROJECT_CONFIG["hilbert_wf_seqann_folder"]
