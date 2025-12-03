@@ -186,6 +186,7 @@ rule normalize_qc_track_intersections:
                 raise
             return df
 
+        label_column = f"{wildcards.qc_track}_label"
         intersect_header = [
             "seq", "start", "end", "window",
             "seq2", "start2", "end2",
@@ -214,7 +215,7 @@ rule merge_qc_track_intersections:
     input:
         tables = expand(
             rules.normalize_qc_track_intersections.output.tsv,
-            qc_track=["flagger_hifi", "nucflag_hifi", "nucflag_ont"],
+            qc_track=QC_TRACKS,
             allow_missing=True
         )
     output:
@@ -380,7 +381,7 @@ rule run_all_prep_qc:
     input:
         qc_beds = expand(
             rules.filter_sequences_to_sex_chrom.output.bed,
-            qc_track=["flagger_hifi", "nucflag_hifi", "nucflag_ont"],
+            qc_track=QC_TRACKS,
             sample=SAMPLES
         ),
         qc_stats = expand(
