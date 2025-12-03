@@ -319,8 +319,8 @@ rule compute_qc_track_stats:
 
             label_stats = {
                 "total_windows": total,
-                "clean_all_n": both_clean,
-                "clean_all_pct": pct(both_clean, total),
+                "clean_all_n": all_clean,
+                "clean_all_pct": pct(all_clean, total),
                 "clean_any_n": any_clean,
                 "clean_any_pct": pct(any_clean, total),
                 "clean_flagger_only_n": flg_only_clean,
