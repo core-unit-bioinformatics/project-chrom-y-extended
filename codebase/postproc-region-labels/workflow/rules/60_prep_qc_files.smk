@@ -195,7 +195,7 @@ rule normalize_qc_track_intersections:
         ]
         usecols = [
             "seq", "start", "end", "window",
-            label_column"
+            label_column
         ]
 
         qc_regions = pd.read_csv(
