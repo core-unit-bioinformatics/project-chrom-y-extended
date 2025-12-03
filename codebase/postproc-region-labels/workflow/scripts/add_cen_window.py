@@ -78,17 +78,21 @@ def main():
         {"Start": "start", "End": "end", "Chromosome": "#seq"},
         axis=1, inplace=False
     )
-    select_cen_to_keep = cen_specs.index.isin(cen_regions["pd_idx"])
-    # some initial CEN regions might have been replaced/subsumed by
-    # the external CEN annotation as a whole
-    cen_specs = cen_specs.loc[select_cen_to_keep, :].copy()
-    cen_specs.drop(["start", "end", "#seq"], axis=1, inplace=True)
+    if not cen_regions.empty:
+        select_cen_to_keep = cen_specs.index.isin(cen_regions["pd_idx"])
+        # some initial CEN regions might have been replaced/subsumed by
+        # the external CEN annotation as a whole, reduce original
+        # set to what is left over
+        # NB: because cen_regions was not empty, there must be
+        # something left here
+        cen_specs = cen_specs.loc[select_cen_to_keep, :].copy()
+        cen_specs.drop(["start", "end", "#seq"], axis=1, inplace=True)
 
-    cen_regions.set_index("pd_idx", inplace=True)
-    cen_specs = cen_specs.join(cen_regions)
-    assert cen_specs.shape[0] == cen_regions.shape[0]
+        cen_regions.set_index("pd_idx", inplace=True)
+        cen_specs = cen_specs.join(cen_regions)
+        assert cen_specs.shape[0] == cen_regions.shape[0]
 
-    cen_specs = cen_specs[column_sort_order]
+        cen_specs = cen_specs[column_sort_order]
 
     # now add the external CEN window
     cen_window = cen_window.df.rename(
@@ -107,7 +111,12 @@ def main():
     cen_window["other_orientation"] = "."
     cen_window["cluster_id"] = -1
 
-    cen_specs = pd.concat([cen_specs, cen_window], axis=0, ignore_index=False)
+    if not cen_regions.empty:
+        cen_specs = pd.concat([cen_specs, cen_window], axis=0, ignore_index=False)
+    else:
+        # empty case: what's left to add is just the CEN window from
+        # the external expert annotation
+        cen_specs = cen_window
 
     seq_classes = pd.concat([seq_classes, cen_specs], axis=0, ignore_index=False)
     seq_classes.sort_values(["#seq", "start", "end"], inplace=True)
