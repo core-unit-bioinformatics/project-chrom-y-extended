@@ -386,4 +386,8 @@ rule run_all_prep_qc:
         qc_stats = expand(
             rules.compute_qc_track_stats.output.json,
             sample=SAMPLES
+        ),
+        isect_tsv = expand(
+            rules.merge_qc_track_intersections.output.tsv,
+            sample=SAMPLES
         )
