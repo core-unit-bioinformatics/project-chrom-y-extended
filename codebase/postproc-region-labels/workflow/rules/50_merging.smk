@@ -105,6 +105,27 @@ rule merge_hmmer_hits_into_aln_kmer_regions:
     # END OF RUN BLOCK
 
 
+localrules: merge_centromere_into_seqclasses
+rule merge_centromere_into_seqclasses:
+    input:
+        bed = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed
+    output:
+        bed = SUB_WD.joinpath(
+            "20_centromere",
+            "{sample}.{ref}.chrY-regions.mrg.aln-kmer-hmmer-cen.bed"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    params:
+        cen_window=lambda wildcards: load_centromere_window(SAMPLE_SHEET, wildcards.sample),
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "add_cen_window.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --label-file {input.bed} --centromere {params.cen_window} --output {output.bed}"
+
+
 rule run_all_merging:
     input:
         mrg_aln_kmer = expand(
@@ -116,4 +137,9 @@ rule run_all_merging:
             rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed,
             sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
             ref=list(MODULE_REF_GENOMES.keys())
-        )
+        ),
+        mrg_aln_kmer_hmmer_cen = expand(
+            rules.merge_centromere_into_seqclasses.output.bed,
+            sample=[sample for sample in SAMPLES if sample not in ["RFGRC38-R1", "RFCHM13-J1"]],
+            ref=list(MODULE_REF_GENOMES.keys())
+        ),

@@ -23,7 +23,7 @@ rule dump_genome_seq_sizes:
 rule create_gap_track:
     input:
         sizes = rules.dump_genome_seq_sizes.output.tsv,
-        regions = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed
+        regions = rules.merge_centromere_into_seqclasses.output.bed
     output:
         bed = SUB_WD.joinpath("suppl", "gap_tracks", "{sample}.{ref}.gaps.bed")
     conda:
@@ -35,10 +35,11 @@ rule create_gap_track:
 localrules: merge_gaps_into_seqclass_labels
 rule merge_gaps_into_seqclass_labels:
     input:
-        labels = rules.merge_hmmer_hits_into_aln_kmer_regions.output.bed,
+        labels = rules.merge_centromere_into_seqclasses.output.bed,
         gaps = rules.create_gap_track.output.bed
     output:
-        tsv = SUB_WD.joinpath("suppl", "seqclass_gaps", "{sample}.{ref}.chrY-regions.gaps.tsv")
+        tsv = SUB_WD.joinpath("suppl", "seqclass_gaps", "{sample}.{ref}.chrY-regions.gaps.tsv"),
+        header = SUB_WD.joinpath("suppl", "seqclass_gaps", "{sample}.{ref}.chrY-regions.gaps.header"),
     run:
         import pandas as pd
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
@@ -62,6 +63,11 @@ rule merge_gaps_into_seqclass_labels:
         assert not pd.isnull(labels).any(axis=0).any()
 
         labels.to_csv(output.tsv, sep="\t", header=True, index=False)
+
+        # in prep for rule set_error_windows
+        labels.rename({"#seq": "seq"}, axis=1, inplace=True)
+        with open(output.header, "w") as dump:
+            _ = dump.write(",".join(labels.columns) + "\n")
     # END OF RUN BLOCK
 
 
@@ -82,34 +88,57 @@ rule intersect_labels_and_qc:
 localrules: set_error_windows
 rule set_error_windows:
     input:
-        isect = rules.intersect_labels_and_qc.output.isect
+        isect = rules.intersect_labels_and_qc.output.isect,
+        qc_header = rules.merge_qc_track_intersections.output.header,
+        seqclass_header = rules.merge_gaps_into_seqclass_labels.output.header
     output:
         tsv = SUB_WD.joinpath("suppl", "add_err_windows", "{sample}.{ref}.chrY-regions.qc-win.err-strict.tsv")
     run:
         import pandas as pd
+
+        def load_header(fp):
+            with open(fp) as hd:
+                columns = hd.readline().strip().split(",")
+            return columns
+
+        columns = load_header(input.seqclass_header) + load_header(input.qc_header) + ["overlap_bp"]
+
         # reheader intersection
-        columns = [
-            "seq", "start", "end", "name", "score", "strand",
-            "thickStart", "thickEnd", "assign_method",
-            "second_best_guess", "kmer_top_enrich", "other_support",
-            "other_orientation", "cluster_id",
-            "seq2", "win_start", "win_end", "win_name", "win_pctile",
-            "flagger_label", "flagger_is_clean",
-            "nucflag_label", "nucflag_is_clean",
-            "overlap_bp"
-        ]
+        # columns = [
+        #     "seq", "start", "end", "name", "score", "strand",
+        #     "thickStart", "thickEnd", "assign_method",
+        #     "second_best_guess", "kmer_top_enrich", "other_support",
+        #     "other_orientation", "cluster_id",
+        #     "seq2", "win_start", "win_end", "win_name", "win_pctile",
+        #     "flagger_label", "flagger_is_clean",
+        #     "nucflag_label", "nucflag_is_clean",
+        #     "overlap_bp"
+        # ]
         df = pd.read_csv(input.isect, sep="\t", header=None, names=columns)
         df.drop(["cluster_id"], axis=1, inplace=True)
 
-        select_flagger_dirty = df["flagger_is_clean"] == 0  # False / not clean
-        select_nucflag_dirty = df["nucflag_is_clean"] == 0  # False / not clean
+        select_flagger_hifi_dirty = df["flagger_hifi_is_clean"] == 0  # False / not clean
+        select_nucflag_hifi_dirty = df["nucflag_hifi_is_clean"] == 0  # False / not clean
+        select_nucflag_ont_dirty = df["nucflag_ont_is_clean"] == 0  # False / not clean
 
         # strict: require error flag from both tools
-        select_strict_dirty = select_flagger_dirty & select_nucflag_dirty
+        select_strict_dirty = (
+            select_flagger_hifi_dirty
+            &
+            select_nucflag_hifi_dirty
+            &
+            select_nucflag_ont_dirty
+        )
         df["error_strict"] = 0
         df.loc[select_strict_dirty, "error_strict"] = 1
         # lenient: require only one error flag
-        select_lenient_dirty = select_flagger_dirty | select_nucflag_dirty
+        select_lenient_dirty = (
+            select_flagger_hifi_dirty
+            |
+            select_nucflag_hifi_dirty
+            |
+            select_nucflag_ont_dirty
+        )
         df["error_lenient"] = 0
         df.loc[select_lenient_dirty, "error_lenient"] = 1
 

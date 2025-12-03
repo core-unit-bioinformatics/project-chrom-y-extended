@@ -22,6 +22,13 @@ def get_sample_file(sample_sheet, sample, file_key):
     return file_path
 
 
+def load_centromere_window(sample_sheet, sample):
+
+    cen_window = sample_sheet.loc[sample, "centromere"].strip()
+    # quote - will be passed verbatim to shell script
+    return f'"{cen_window}"'
+
+
 def get_timestamp():
     ts = dt.datetime.today().strftime("%Y%m%dT%H%M")
     return ts

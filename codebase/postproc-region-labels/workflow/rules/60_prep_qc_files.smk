@@ -220,6 +220,7 @@ rule merge_qc_track_intersections:
         )
     output:
         tsv = SUB_WD.joinpath("suppl", "merge_qc", "{sample}_qclabels.win-1k.tsv"),
+        header = SUB_WD.joinpath("suppl", "merge_qc", "{sample}_qclabels.win-1k.header")
     run:
         import pandas as pd
         assert len(input.tables) == len(QC_TRACKS)
@@ -227,13 +228,30 @@ rule merge_qc_track_intersections:
         use_index = ["seq", "start", "end", "window", "rank_bin"]
         qc1 = pd.read_csv(input.tables[0], sep="\t", header=0, index_col=use_index)
         qc2 = pd.read_csv(input.tables[1], sep="\t", header=0, index_col=use_index)
+        qc3 = pd.read_csv(input.tables[2], sep="\t", header=0, index_col=use_index)
 
-        merge = qc1.join(qc2, how="outer")
-        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0]
+        others = [qc2, qc3]
+        assert len(others) + 1 == len(QC_TRACKS)
+
+        merge = qc1.join(others, how="outer")
+        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0] == qc3.shape[0]
         merge.reset_index(drop=False, inplace=True)
         merge.rename({"seq": "#seq"}, axis=1, inplace=True)
 
         merge.to_csv(output.tsv, sep="\t", header=True, index=False)
+
+        # This: in prep for rule set_error_windows
+        renamer = dict(
+            (old_name, new_name) for old_name, new_name in
+            zip(
+                ["#seq", "start", "end", "window", "rank_bin"],
+                ["seq2", "win_start", "win_end", "win_name", "win_pctile"]
+            )
+        )
+
+        merge.rename(renamer, axis=1, inplace=True)
+        with open(output.header, "w") as dump:
+            _ = dump.write(",".join(merge.columns) + "\n")
     # END OF RUN BLOCK
 
 
