@@ -23,20 +23,48 @@ rule filter_sequences_to_sex_chrom:
             "score", "strand",
             "thick_start", "thick_end", "color"
         ]
-        qc_flagged_regions = pd.read_csv(input.qc_bed, sep="\t", header=None, names=qc_header)
+        # added comment to skip over new header line for
+        # nucflag v1 / ont results
+        qc_flagged_regions = pd.read_csv(
+            input.qc_bed, sep="\t",
+            header=None,
+            names=qc_header,
+            comment="#"
+        )
         selector = qc_flagged_regions["seq"].isin(known_seqs)
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
         assert not qc_flagged_regions.empty, f"No seqs selected: {known_seqs}"
         # update: Glennis Logsdon said it is ok to filter out HET
         # labels from the NucFlag tracks because these do not really
         # indicate errors.
-        if wildcards.qc_track == "nucflag":
+        if wildcards.qc_track == "nucflag_hifi":
             input_size = qc_flagged_regions.shape[0]
             qc_flagged_regions = qc_flagged_regions.loc[
                 qc_flagged_regions["label"] != "HET", :
             ].copy()
             mod_size = qc_flagged_regions.shape[0]
             assert mod_size < input_size
+        elif wildcards.qc_track == "nucflag_ont":
+            input_size = qc_flagged_regions.shape[0]
+            # filter for set of actual / largest errors
+            # as indicated by Keith Oshima
+            # - other labels are not considered errors
+            qc_flagged_regions = qc_flagged_regions.loc[
+                qc_flagged_regions["label"].isin(
+                    [
+                        "collapse",
+                        "scaffold",
+                        "false_dup",
+                        "het_mismap",
+                        "misjoin",
+                        "indel"
+                    ]
+                ), :
+            ].copy()
+            mod_size = qc_flagged_regions.shape[0]
+            assert mod_size < input_size
+        else:
+            pass
         qc_flagged_regions.sort_values(["seq", "start", "end"], inplace=True)
         qc_flagged_regions.rename({"seq": "#seq"}, axis=1, inplace=True)
         qc_flagged_regions.to_csv(output.bed, sep="\t", header=True, index=False)
@@ -122,29 +150,35 @@ rule normalize_qc_track_intersections:
 
         def simplify_labeling(df):
 
-            if wildcards.qc_track == "flagger":
-                df["flagger_is_clean"] = 0
-                df.loc[df["flagger_label"] == "Hap", "flagger_is_clean"] = 1
-                # hold because of 1 kbp binning
+            label_column = f"{wildcards.qc_track}_label"
+            indicator_column = f"{wildcards.qc_track}_is_clean"
+
+            if wildcards.qc_track in ["flagger_hifi", "flagger_ont"]:
+                df[indicator_column] = 0
+                df.loc[df[label_column] == "Hap", indicator_column] = 1
+                # hold because of 1 kbp binning in flagger
                 assert df.shape[0] == df["window"].nunique()
-            elif wildcards.qc_track == "nucflag":
-                df["nucflag_label"] = df["nucflag_label"].replace({".": "Hap"}, inplace=False)
-                df["nucflag_is_clean"] = 0
-                df.loc[df["nucflag_label"] == "Hap", "nucflag_is_clean"] = 1
+            elif wildcards.qc_track in ["nucflag_hifi", "nucflag_ont"]:
+                # here: NucFlag only flags errors, hence replace
+                # empty intersect windows with 'Hap' (= good, same as in flagger)
+                df[label_column] = df[label_column].replace({".": "Hap"}, inplace=False)
+                df[indicator_column] = 0
+                df.loc[df[label_column] == "Hap", indicator_column] = 1
+                # this occurs because NucFlag does not operate on
+                # 1 kbp bins as flagger does
                 df.drop_duplicates(
-                    subset=["seq", "window", "nucflag_label", "nucflag_is_clean"],
+                    subset=["seq", "window", label_column, indicator_column],
                     keep="first", inplace=True
                 )
-
                 set_new_labels = []
                 drop_indices = []
                 for window, regions in df.loc[df.duplicated(subset="window", keep=False), :].groupby("window"):
-                    merged_labels = "|".join(sorted(set(regions["nucflag_label"].values)))
+                    merged_labels = "|".join(sorted(set(regions[label_column].values)))
                     keep_index = regions.index.min()
                     drop_indices.extend(idx for idx in regions.index if idx != keep_index)
                     set_new_labels.append((keep_index, merged_labels))
                 for idx, label in set_new_labels:
-                    df.loc[idx, "nucflag_label"] = label
+                    df.loc[idx, label_column] = label
                 df.drop(drop_indices, axis=0, inplace=True)
                 df.reset_index(inplace=True, drop=True)
                 assert df.shape[0] == df["window"].nunique()
@@ -155,13 +189,13 @@ rule normalize_qc_track_intersections:
         intersect_header = [
             "seq", "start", "end", "window",
             "seq2", "start2", "end2",
-            f"{wildcards.qc_track}_label",
+            label_column,
             "score", "strand", "thick_start", "thick_end",
             "color", "overlap_bp"
         ]
         usecols = [
             "seq", "start", "end", "window",
-            f"{wildcards.qc_track}_label"
+            label_column"
         ]
 
         qc_regions = pd.read_csv(
@@ -180,7 +214,7 @@ rule merge_qc_track_intersections:
     input:
         tables = expand(
             rules.normalize_qc_track_intersections.output.tsv,
-            qc_track=["flagger", "nucflag"],
+            qc_track=["flagger_hifi", "nucflag_hifi", "nucflag_ont"],
             allow_missing=True
         )
     output:
@@ -228,7 +262,9 @@ rule compute_qc_track_stats:
             # special workaround for sample HG03456
             # which is XYY
             if wildcards.sample == "HG03456":
-                is_main = len(parts) == 3 and parts[1] == "chrY" and parts[2] in ["1", "2"]
+                # XYY karyotype - dropped from project
+                raise ValueError(f"Invalid sample detected: {wildcards}")
+                #is_main = len(parts) == 3 and parts[1] == "chrY" and parts[2] in ["1", "2"]
             else:
                 is_main = len(parts) == 2 and parts[1] == "chrY"
             return 1 if is_main else 0
@@ -251,19 +287,21 @@ rule compute_qc_track_stats:
             """descriptive stats per QC label/tool
             Focus on clean / not flagged
             """
-            flg = df["flagger_is_clean"]
-            ncf = df["nucflag_is_clean"]
+            flg_hifi = df["flagger_hifi_is_clean"]
+            ncf_hifi = df["nucflag_hifi_is_clean"]
+            ncf_ont = df["nucflag_ont_is_clean"]
 
             total = df.shape[0]
-            both_clean = sum(flg & ncf)
-            any_clean = sum(flg | ncf)
-            flg_only_clean = sum(flg & ~ncf)
-            ncf_only_clean = sum(~flg & ncf)
+            all_clean = sum(flg_hifi & ncf_hifi & ncf_ont)
+            any_clean = sum(flg_hifi | ncf_hifi | ncf_ont)
+            # TODO - continue here
+            flg_only_clean = sum(flg_hifi & ~(ncf_hifi | ncf_ont))
+            ncf_only_clean = sum((ncf_hifi & ncf_ont) & ~flg_hifi)
 
             label_stats = {
                 "total_windows": total,
-                "clean_both_n": both_clean,
-                "clean_both_pct": pct(both_clean, total),
+                "clean_all_n": both_clean,
+                "clean_all_pct": pct(both_clean, total),
                 "clean_any_n": any_clean,
                 "clean_any_pct": pct(any_clean, total),
                 "clean_flagger_only_n": flg_only_clean,
@@ -275,8 +313,12 @@ rule compute_qc_track_stats:
 
         def summarize_by_location(df):
             """nb: passed df is just a view, hence copy subset"""
-            agg_df = df[["rank_bin", "flagger_is_clean", "nucflag_is_clean"]].copy()
-            agg_df["joined"] = agg_df["flagger_is_clean"] + agg_df["nucflag_is_clean"]
+            indicator_columns = [
+                "flagger_hifi_is_clean",
+                "nucflag_hifi_is_clean", "nucflag_ont_is_clean"
+            ]
+            agg_df = df[["rank_bin"] + indicator_columns].copy()
+            agg_df["joined"] = agg_df.loc[: ,indicator_columns].sum(axis=1)
 
             agg_flags = agg_df.groupby("rank_bin")["joined"].value_counts().reset_index(drop=False)
 
@@ -288,7 +330,7 @@ rule compute_qc_track_stats:
 
             agg_flags["label"] = agg_flags["joined"].replace(
                 {
-                    2: "clean_both", 1: "clean_any", 0: "clean_not"
+                    2: "clean_all", 1: "clean_any", 0: "clean_not"
                 }, inplace=False
             )
 
@@ -338,7 +380,7 @@ rule run_all_prep_qc:
     input:
         qc_beds = expand(
             rules.filter_sequences_to_sex_chrom.output.bed,
-            qc_track=["flagger", "nucflag"],
+            qc_track=["flagger_hifi", "nucflag_hifi", "nucflag_ont"],
             sample=SAMPLES
         ),
         qc_stats = expand(

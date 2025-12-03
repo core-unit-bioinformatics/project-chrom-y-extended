@@ -21,8 +21,10 @@
       "hmmer_filtered_yq12": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_hmmer-filtered-hits/yq12hmmerFilter",
       "kmer_color_block_compare": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250911_ColorBlockAnnotations",
       "kmer_color_blocks_uniqk": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/jax/mark-loftus/20250910_ColorBlock_BEDfiles",
-      "nucflag_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/keith-oshima/20250922_nucflag_v034",
-      "flagger_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/ucsc/prajna-hebbar/flagger/chrY"
+      "nucflag_hifi_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/keith-oshima/20250922_nucflag_v034",
+      "nucflag_ont_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/keith-oshima/20251203_nucflag_v100",
+      "flagger_hifi_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/ucsc/prajna-hebbar/flagger/chrY",
+      "centromeres": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/shenghan-gao/centromeres"
 
 
     }
