@@ -237,12 +237,13 @@ rule merge_qc_track_intersections:
         qc1 = pd.read_csv(input.tables[0], sep="\t", header=0, index_col=use_index)
         qc2 = pd.read_csv(input.tables[1], sep="\t", header=0, index_col=use_index)
         qc3 = pd.read_csv(input.tables[2], sep="\t", header=0, index_col=use_index)
+        qc4 = pd.read_csv(input.tables[3], sep="\t", header=0, index_col=use_index)
 
-        others = [qc2, qc3]
+        others = [qc2, qc3, qc4]
         assert len(others) + 1 == len(QC_TRACKS)
 
         merge = qc1.join(others, how="outer")
-        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0] == qc3.shape[0]
+        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0] == qc3.shape[0] == qc4.shape[0]
         merge.reset_index(drop=False, inplace=True)
         merge.rename({"seq": "#seq"}, axis=1, inplace=True)
 
@@ -315,15 +316,16 @@ rule compute_qc_track_stats:
             Focus on clean / not flagged
             """
             flg_hifi = df["flagger_hifi_is_clean"]
+            flg_ont = df["flagger_ont_is_clean"]
             ncf_hifi = df["nucflag_hifi_is_clean"]
             ncf_ont = df["nucflag_ont_is_clean"]
 
             total = df.shape[0]
-            all_clean = sum(flg_hifi & ncf_hifi & ncf_ont)
-            any_clean = sum(flg_hifi | ncf_hifi | ncf_ont)
+            all_clean = sum(flg_hifi & flg_ont & ncf_hifi & ncf_ont)
+            any_clean = sum(flg_hifi | flg_ont | ncf_hifi | ncf_ont)
             # TODO - continue here
-            flg_only_clean = sum(flg_hifi & ~(ncf_hifi | ncf_ont))
-            ncf_only_clean = sum((ncf_hifi & ncf_ont) & ~flg_hifi)
+            flg_only_clean = sum((flg_hifi & flg_ont) & ~(ncf_hifi | ncf_ont))
+            ncf_only_clean = sum((ncf_hifi & ncf_ont) & ~(flg_hifi | flg_ont))
 
             label_stats = {
                 "total_windows": total,
@@ -341,7 +343,7 @@ rule compute_qc_track_stats:
         def summarize_by_location(df):
             """nb: passed df is just a view, hence copy subset"""
             indicator_columns = [
-                "flagger_hifi_is_clean",
+                "flagger_hifi_is_clean", "flagger_ont_is_clean",
                 "nucflag_hifi_is_clean", "nucflag_ont_is_clean"
             ]
             agg_df = df[["rank_bin"] + indicator_columns].copy()
