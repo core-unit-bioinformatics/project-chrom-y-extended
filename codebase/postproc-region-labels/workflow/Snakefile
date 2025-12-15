@@ -13,7 +13,7 @@ WD = pathlib.Path(MODULE_SUBFOLDER)
 SAMPLE_SHEET = SAMPLE_SHEETS["vrk_chrY_arhie_freeze.assm-qc"]
 SAMPLES=SAMPLE_SHEET.index.values
 
-QC_TRACKS = ["flagger_hifi", "nucflag_hifi", "nucflag_ont"]
+QC_TRACKS = ["flagger_hifi", "flagger_ont", "nucflag_hifi", "nucflag_ont"]
 
 wildcard_constraints:
     sample = "(" + "|".join(SAMPLES) + ")",
