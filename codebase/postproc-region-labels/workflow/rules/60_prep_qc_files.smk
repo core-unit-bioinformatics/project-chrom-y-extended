@@ -25,11 +25,19 @@ rule filter_sequences_to_sex_chrom:
         ]
         # added comment to skip over new header line for
         # nucflag v1 / ont results
+
+        if wildcards.qc_track in ["flagger_hifi", "flagger_ont"]:
+            # skip over 'track' line in flagger files
+            skiprows = 1
+        else:
+            skiprows = None
+
         qc_flagged_regions = pd.read_csv(
             input.qc_bed, sep="\t",
             header=None,
             names=qc_header,
-            comment="#"
+            comment="#",
+            skiprows=skiprows
         )
         selector = qc_flagged_regions["seq"].isin(known_seqs)
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
