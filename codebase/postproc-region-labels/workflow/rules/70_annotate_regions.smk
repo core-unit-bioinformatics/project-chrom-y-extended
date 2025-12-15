@@ -118,12 +118,15 @@ rule set_error_windows:
         df.drop(["cluster_id"], axis=1, inplace=True)
 
         select_flagger_hifi_dirty = df["flagger_hifi_is_clean"] == 0  # False / not clean
+        select_flagger_ont_dirty = df["flagger_ont_is_clean"] == 0  # False / not clean
         select_nucflag_hifi_dirty = df["nucflag_hifi_is_clean"] == 0  # False / not clean
         select_nucflag_ont_dirty = df["nucflag_ont_is_clean"] == 0  # False / not clean
 
         # strict: require error flag from all tools
         select_strict_dirty = (
             select_flagger_hifi_dirty
+            &
+            select_flagger_ont_dirty
             &
             select_nucflag_hifi_dirty
             &
@@ -134,6 +137,8 @@ rule set_error_windows:
         # lenient: require only one error flag
         select_lenient_dirty = (
             select_flagger_hifi_dirty
+            |
+            select_flagger_ont_dirty
             |
             select_nucflag_hifi_dirty
             |
