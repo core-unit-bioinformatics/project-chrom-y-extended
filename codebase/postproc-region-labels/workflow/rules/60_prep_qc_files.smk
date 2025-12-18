@@ -252,7 +252,7 @@ rule merge_qc_track_intersections:
         qc4 = pd.read_csv(input.tables[3], sep="\t", header=0, index_col=use_index)
         qc5 = pd.read_csv(input.tables[4], sep="\t", header=0, index_col=use_index)
 
-        others = [qc2, qc3, qc4]
+        others = [qc2, qc3, qc4, qc5]
         assert len(others) + 1 == len(QC_TRACKS)
 
         merge = qc1.join(others, how="outer")
