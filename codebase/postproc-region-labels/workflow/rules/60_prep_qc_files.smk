@@ -23,6 +23,9 @@ rule filter_sequences_to_sex_chrom:
             "score", "strand",
             "thick_start", "thick_end", "color"
         ]
+
+        if wildcards.qc_track == "kmer_errors":
+            qc_header = ["seq", "start", "end"]
         # added comment to skip over new header line for
         # nucflag v1 / ont results
 
@@ -71,6 +74,15 @@ rule filter_sequences_to_sex_chrom:
             ].copy()
             mod_size = qc_flagged_regions.shape[0]
             assert mod_size < input_size
+        elif wildcards.qc_track == "kmer_errors":
+            # add mock values for compatibility;
+            # will all be dropped downstream
+            qc_flagged_regions["label"] = "Err"
+            qc_flagged_regions["score"] = 0
+            qc_flagged_regions["strand"] = "+"
+            qc_flagged_regions["thick_start"] = qc_flagged_regions["start"]
+            qc_flagged_regions["thick_end"] = qc_flagged_regions["end"]
+            qc_flagged_regions["color"] = "255,0,0"
         else:
             pass
         qc_flagged_regions.sort_values(["seq", "start", "end"], inplace=True)
@@ -166,13 +178,13 @@ rule normalize_qc_track_intersections:
                 df.loc[df[label_column] == "Hap", indicator_column] = 1
                 # hold because of 1 kbp binning in flagger
                 assert df.shape[0] == df["window"].nunique()
-            elif wildcards.qc_track in ["nucflag_hifi", "nucflag_ont"]:
-                # here: NucFlag only flags errors, hence replace
+            elif wildcards.qc_track in ["nucflag_hifi", "nucflag_ont", "kmer_errors"]:
+                # here: NucFlag and kmer track only flags errors, hence replace
                 # empty intersect windows with 'Hap' (= good, same as in flagger)
                 df[label_column] = df[label_column].replace({".": "Hap"}, inplace=False)
                 df[indicator_column] = 0
                 df.loc[df[label_column] == "Hap", indicator_column] = 1
-                # this occurs because NucFlag does not operate on
+                # this occurs because NucFlag and kmer track do not operate on
                 # 1 kbp bins as flagger does
                 df.drop_duplicates(
                     subset=["seq", "window", label_column, indicator_column],
@@ -238,12 +250,13 @@ rule merge_qc_track_intersections:
         qc2 = pd.read_csv(input.tables[1], sep="\t", header=0, index_col=use_index)
         qc3 = pd.read_csv(input.tables[2], sep="\t", header=0, index_col=use_index)
         qc4 = pd.read_csv(input.tables[3], sep="\t", header=0, index_col=use_index)
+        qc5 = pd.read_csv(input.tables[4], sep="\t", header=0, index_col=use_index)
 
         others = [qc2, qc3, qc4]
         assert len(others) + 1 == len(QC_TRACKS)
 
         merge = qc1.join(others, how="outer")
-        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0] == qc3.shape[0] == qc4.shape[0]
+        assert merge.shape[0] == qc1.shape[0] == qc2.shape[0] == qc3.shape[0] == qc4.shape[0] == qc5.shape[0]
         merge.reset_index(drop=False, inplace=True)
         merge.rename({"seq": "#seq"}, axis=1, inplace=True)
 
