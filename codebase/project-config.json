@@ -24,7 +24,7 @@
       "nucflag_hifi_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/keith-oshima/20250922_nucflag_v034",
       "nucflag_ont_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/keith-oshima/20251203_nucflag_v100",
       "flagger_hifi_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/ucsc/prajna-hebbar/flagger/hifi_v2/whole_genome",
-      "flagger_ont_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/ucsc/prajna-hebbar/flagger/hifi_v1/whole_genome",
+      "flagger_ont_annotation": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/ucsc/prajna-hebbar/flagger/ont_v1/whole_genome",
       "centromeres": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/upenn/shenghan-gao/centromeres",
       "kmer_errors": "projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/external-incoming/nhgri/arang-rhie/merqury_qv/error_kmer_bed"
     }
