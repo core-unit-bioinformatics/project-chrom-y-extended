@@ -29,11 +29,19 @@ rule filter_sequences_to_sex_chrom:
         # added comment to skip over new header line for
         # nucflag v1 / ont results
 
+        # change: 2026-01-06
+        # PH changed the output format, now flagger bed files
+        # no longer have a `track` header line; guarding against
+        # future format changes with this explicit check below
+        skiprows = None
         if wildcards.qc_track in ["flagger_hifi", "flagger_ont"]:
-            # skip over 'track' line in flagger files
-            skiprows = 1
-        else:
-            skiprows = None
+            first_line = open(input.qc_bed).readline().strip().split()
+            try:
+                assert int(first_line[1]) == 0, \
+                    f"malformed bed file: {wildcards.sample} / {wildcards.qc_track}: {first_line}"
+            except (TypeError, ValueError):
+                err_msg = (f"malformed bed file: {wildcards.sample} / {wildcards.qc_track}: {first_line}")
+                raise RuntimeError(err_msg)
 
         qc_flagged_regions = pd.read_csv(
             input.qc_bed, sep="\t",
