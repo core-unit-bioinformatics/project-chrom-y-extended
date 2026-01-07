@@ -188,7 +188,7 @@ rule normalize_qc_track_intersections:
                 df_rows = df.shape[0]
                 num_windows = df["window"].nunique()
                 if df_rows != num_windows:
-                    dups = df["window"].duplicated()
+                    dups = df["window"].duplicated(keep=False)
                     print(df.loc[dups, :])
                     print(f"from file: {input.tsv}")
                 assert df_rows == num_windows, f"{wildcards.sample} / {wildcards.qc_track}: {df_rows} vs {num_windows}"
