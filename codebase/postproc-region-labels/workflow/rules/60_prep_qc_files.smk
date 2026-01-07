@@ -187,6 +187,10 @@ rule normalize_qc_track_intersections:
                 # hold because of 1 kbp binning in flagger
                 df_rows = df.shape[0]
                 num_windows = df["window"].nunique()
+                if df_rows != num_windows:
+                    dups = df["windows"].duplicated()
+                    print(df.loc[dups, :])
+                    print(f"from file: {input.tsv}")
                 assert df_rows == num_windows, f"{wildcards.sample} / {wildcards.qc_track}: {df_rows} vs {num_windows}"
             elif wildcards.qc_track in ["nucflag_hifi", "nucflag_ont", "kmer_errors"]:
                 # here: NucFlag and kmer track only flags errors, hence replace
