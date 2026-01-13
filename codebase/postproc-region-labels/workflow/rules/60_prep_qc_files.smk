@@ -51,8 +51,9 @@ rule filter_sequences_to_sex_chrom:
             skiprows=skiprows
         )
         selector = qc_flagged_regions["seq"].isin(known_seqs)
+        file_seqs = sorted(qc_flagged_regions["seq"].unique())
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
-        assert not qc_flagged_regions.empty, f"No seqs selected: {known_seqs}"
+        assert not qc_flagged_regions.empty, f"No seqs selected: {sorted(known_seqs)} - in BED file: {file_seqs}"
         # update: Glennis Logsdon said it is ok to filter out HET
         # labels from the NucFlag tracks because these do not really
         # indicate errors.
