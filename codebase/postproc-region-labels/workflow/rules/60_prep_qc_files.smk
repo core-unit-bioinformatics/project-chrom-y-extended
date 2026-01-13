@@ -49,25 +49,13 @@ rule filter_sequences_to_sex_chrom:
                 else:
                     raise RuntimeError(err_msg)
 
-        # 2026-01-13
-        # manual debug for some malformed data - faster that computational handling
-        if wildcards.sample in ["HG003"] and wildcards.qc_track in ["flagger_ont"]:
-            qc_flagged_regions = pd.read_csv(
-                input.qc_bed, sep="\t",
-                header=None,
-                names=qc_header + ["seq_length"],
-                comment="#",
-                skiprows=skiprows,
-                usecols=qc_header
-            )
-        else:
-            qc_flagged_regions = pd.read_csv(
-                input.qc_bed, sep="\t",
-                header=None,
-                names=qc_header,
-                comment="#",
-                skiprows=skiprows
-            )
+        qc_flagged_regions = pd.read_csv(
+            input.qc_bed, sep="\t",
+            header=None,
+            names=qc_header,
+            comment="#",
+            skiprows=skiprows
+        )
         selector = qc_flagged_regions["seq"].isin(known_seqs)
         file_seqs = sorted(qc_flagged_regions["seq"].unique())
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
