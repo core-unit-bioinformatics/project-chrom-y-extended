@@ -41,7 +41,13 @@ rule filter_sequences_to_sex_chrom:
                     f"malformed bed file: {wildcards.sample} / {wildcards.qc_track}: {first_line}"
             except (TypeError, ValueError):
                 err_msg = (f"malformed bed file: {wildcards.sample} / {wildcards.qc_track}: {first_line}")
-                raise RuntimeError(err_msg)
+                if first_line[0] == "track":
+                    # 2026-01-13
+                    # workaround for
+                    # NA12884/ont,NA12883/ont,NA12883/hifi,NA12884/hifi
+                    skiprows = 1
+                else:
+                    raise RuntimeError(err_msg)
 
         # 2026-01-13
         # manual debug for some malformed data - faster that computational handling
@@ -66,6 +72,7 @@ rule filter_sequences_to_sex_chrom:
         file_seqs = sorted(qc_flagged_regions["seq"].unique())
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
         assert not qc_flagged_regions.empty, f"No seqs selected: {sorted(known_seqs)} - in BED file: {file_seqs}"
+        assert qc_flagged_regions["start"].iloc[0] == 0, f"Malformed QC regions: {qc_flagged_regions.head()}"
         # update: Glennis Logsdon said it is ok to filter out HET
         # labels from the NucFlag tracks because these do not really
         # indicate errors.
