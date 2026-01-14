@@ -245,6 +245,27 @@ def cluster_kmer_annotations(concat):
     return merged_regions
 
 
+SINGLE_CHAR_COLOR_CODES = {
+    "b": "blue",
+    "g": "green",
+    "y": "yellow",
+    "r": "red"
+}
+
+INVREP_COLOR_BLOCK_PATTERN = re.compile("^IR[0-9]\\-[bgyr][0-9]$")
+
+
+def normalize_invrep_color_blocks(label):
+
+    mobj = INVREP_COLOR_BLOCK_PATTERN.match(label)
+    if mobj is None:
+        return label
+    invrep, color = label.split("-")
+    color = SINGLE_CHAR_COLOR_CODES[color[0]]
+    new_label = f"{color}-{invrep}"
+    return new_label
+
+
 def main():
 
     args = parse_command_line()
@@ -258,6 +279,14 @@ def main():
     aln_labels.rename({"#chrom": "seq"}, axis=1, inplace=True)
     # in prep for pyranges clustering
     aln_labels["strand"] = aln_labels["strand"].replace({1: "+", -1: "-"}, inplace=False).astype(str)
+
+    # 2026-01-14
+    # noted after finalizing labels: T2T-style and hg38-style of designating IR color blocks
+    # is inconsistent and needs to be normalized here to drop some of the alignment-based
+    # labels in favor of the k-mer derived ones
+    # see applied function
+    aln_labels["name"] = aln_labels["name"].apply(normalize_invrep_color_blocks)
+
     aln_labels["plain_label"] = aln_labels["name"].apply(plainify_label)
     aln_labels["source"] = "aln"
 
