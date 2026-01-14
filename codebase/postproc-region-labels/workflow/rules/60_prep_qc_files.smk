@@ -60,7 +60,14 @@ rule filter_sequences_to_sex_chrom:
         file_seqs = sorted(qc_flagged_regions["seq"].unique())
         qc_flagged_regions = qc_flagged_regions.loc[selector, :].copy()
         assert not qc_flagged_regions.empty, f"No seqs selected: {sorted(known_seqs)} - in BED file: {file_seqs}"
-        assert qc_flagged_regions["start"].iloc[0] == 0, f"Malformed QC regions: {qc_flagged_regions.head()}"
+        try:
+            assert qc_flagged_regions["start"].iloc[0] == 0, f"Malformed QC regions: {qc_flagged_regions.head()}"
+        except AssertionError:
+            # this is potentially fine for a known off-by-one in NucFlag/hifi
+            if wildcards.qc_track == "nucflag_hifi":
+                assert qc_flagged_regions["start"].iloc[0] == 1, f"Malformed QC regions: {qc_flagged_regions.head()}"
+            else:
+                raise
         # update: Glennis Logsdon said it is ok to filter out HET
         # labels from the NucFlag tracks because these do not really
         # indicate errors.
