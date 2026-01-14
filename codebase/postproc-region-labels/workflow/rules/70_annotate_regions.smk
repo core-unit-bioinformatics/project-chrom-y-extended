@@ -127,7 +127,7 @@ rule set_error_windows:
             select_nucflag_ont_dirty
         )
         df["error_struct"] = 0
-        df.loc[select_strict_dirty, "error_struct"] = 1
+        df.loc[select_struct_errors, "error_struct"] = 1
 
         df["error_base_win"] = 0
         df.loc[select_kmer_dirty, "error_base_win"] = 1
