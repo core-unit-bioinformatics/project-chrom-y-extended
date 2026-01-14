@@ -198,8 +198,10 @@ rule add_kmer_high_res_blocks:
         tsv = SUB_WD.joinpath("suppl", "add_high_res_kmer", "{sample}.{ref}.chrY-regions.qc-win.err-struct-base-win.tsv")
     run:
         import pandas as pd
+        # NB: due to the expand (?), input.kmer_track
+        # is a Snakemake Namedlist
         kmers = pd.read_csv(
-            input.kmer_track, sep="\t", header=0,
+            input.kmer_track[0], sep="\t", header=0,
             usecols=["#seq", "start", "end", "strand"]
         )
         kmers.rename({"#seq": "seq"}, axis=1, inplace=True)
