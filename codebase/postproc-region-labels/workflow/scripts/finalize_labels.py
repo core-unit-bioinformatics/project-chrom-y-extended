@@ -335,9 +335,9 @@ def merge_to_debug_regions(windows):
 
     assert windows.shape[0] > 1
 
-    if (windows["name"] == "ERR").any():
+    if windows["name"].isin(["ERRSTRUCT"]).any():
         dbr = window_to_debug_region(
-            windows.loc[windows["name"] == "ERR", :].iloc[0].to_dict()
+            windows.loc[windows["name"].isin(["ERRSTRUCT"]), :].iloc[0].to_dict()
         )
         dbrs = [dbr]
     else:
@@ -363,7 +363,7 @@ def window_to_debug_region(window):
     primary_label = window["name"]
     secondary_label = window["second_best_guess"]
 
-    if primary_label == "ERR":
+    if primary_label == "ERRSTRUCT":
         score = 0
         strand = "+"
     if primary_label == "UNASSIGNED":

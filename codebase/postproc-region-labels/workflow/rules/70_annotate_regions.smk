@@ -111,8 +111,6 @@ rule set_error_windows:
         select_nucflag_hifi_dirty = df["nucflag_hifi_is_clean"] == 0  # False / not clean
         select_nucflag_ont_dirty = df["nucflag_ont_is_clean"] == 0  # False / not clean
 
-        select_kmer_dirty = df["kmer_errors_is_clean"] == 0  # False / not clean
-
         # 2026-01-06
         # decision: flagger/nucflag errors are labeled as "structural errors";
         # bases flagged by erroneous k-mers are labeled as "base errors"
@@ -129,6 +127,9 @@ rule set_error_windows:
         df["error_struct"] = 0
         df.loc[select_struct_errors, "error_struct"] = 1
 
+        # this is kept here for reference, but the erroneous k-mers are
+        # added later with their original coordinates to keep the resolution
+        select_kmer_dirty = df["kmer_errors_is_clean"] == 0  # False / not clean
         df["error_base_win"] = 0
         df.loc[select_kmer_dirty, "error_base_win"] = 1
 
@@ -155,7 +156,8 @@ rule set_error_windows:
                     # unassigned blocks that are labeled as errors can
                     # just be dropped from the list of regions
                     drop_rows.add(row.Index)
-            if row.error_base_win == 1:
+            # see comment above about k-mers
+            if False and row.error_base_win == 1:
                 err_label = "ERRBASEWIN"
                 assign_method = "kmer"
                 new_row = row._asdict()
@@ -185,78 +187,15 @@ rule set_error_windows:
     # END OF RUN BLOCK
 
 
-localrules: add_kmer_high_res_blocks
-rule add_kmer_high_res_blocks:
-    input:
-        kmer_track = expand(
-            rules.filter_sequences_to_sex_chrom.output.bed,
-            qc_track="kmer_errors",
-            allow_missing=True
-        ),
-        window_track = rules.set_error_windows.output.tsv
-    output:
-        tsv = SUB_WD.joinpath("suppl", "add_high_res_kmer", "{sample}.{ref}.chrY-regions.qc-win.err-struct-base-win.tsv")
-    run:
-        import pandas as pd
-        # NB: due to the expand (?), input.kmer_track
-        # is a Snakemake Namedlist
-        kmers = pd.read_csv(
-            input.kmer_track[0], sep="\t", header=0,
-            usecols=[
-                "#seq", "start", "end", "strand",
-            ]
-        )
-        kmers.rename({"#seq": "seq"}, axis=1, inplace=True)
-        kmers["seq2"] = kmers["seq"]
-        kmers["thickStart"] = kmers["start"]
-        kmers["thickEnd"] = kmers["end"]
-        kmers["name"] = "ERRBASE"
-        kmers["score"] = 0
-        kmers["second_best_guess"] = "ERRBASE"
-        kmers["assign_method"] = "kmer"
-        kmers["error_base"] = 1
-        kmers["error_base_win"] = -1
-        kmers["error_struct"] = -1
-        kmers["kmer_top_enrich"] = 0.
-        kmers["other_support"] = "none"
-        kmers["other_orientation"] = "."
-        kmers["win_pctile"] = -1
-        kmers["overlap_bp"] = -1
-        kmers["win_start"] = -1
-        kmers["win_end"] = -1
-        kmers["win_name"] = "UNK"
-
-        err_win = pd.read_csv(input.window_track, sep="\t", header=0)
-        concat = pd.concat([err_win, kmers], axis=0, ignore_index=False)
-        concat.sort_values(["seq", "start", "end"], inplace=True)
-        na_cols = pd.isna(concat).any(axis=0)
-        if na_cols.any():
-            column_names = concat.columns[na_cols]
-            for cn in column_names:
-                if "is_clean" in cn:
-                    concat[cn] = concat[cn].fillna(-1)
-                if "_label" in cn:
-                    concat[cn] = concat[cn].fillna("UNK")
-                if cn == "error_base":
-                    concat[cn] = concat[cn].fillna(-1)
-            na_cols = pd.isna(concat).any(axis=0)
-            if na_cols.any():
-                column_names = concat.columns[na_cols]
-                print(column_names)
-                raise ValueError(f"missing values: {column_names}")
-        concat.to_csv(output.tsv, sep="\t", header=True, index=False)
-    # END OF RUN BLOCK
-
-
 rule label_and_merge_windows:
     input:
         tsv = rules.set_error_windows.output.tsv
     output:
         bed = SUB_WD.joinpath(
-            "results", "seq_class", "{sample}.{ref}.chrY-regions.err-strict.bed"
+            "suppl", "seq_class_draft", "{sample}.{ref}.chrY-regions.err-struct.bed"
         ),
         tsv = SUB_WD.joinpath(
-            "suppl", "win_merge_debug", "{sample}.{ref}.chrY-regions.err-strict.debug.tsv"
+            "suppl", "win_merge_debug", "{sample}.{ref}.chrY-regions.err-struct.debug.tsv"
         )
     conda:
         GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
@@ -271,16 +210,81 @@ rule label_and_merge_windows:
         "{params.script} --isect-table {input.tsv} --output {output.bed} --debug-out {output.tsv}"
 
 
+localrules: add_kmer_blocks
+rule add_kmer_blocks:
+    input:
+        regions = ,
+        kmers =
+    output:
+        bed = SUB_WD.joinpath(
+            "suppl", "seq_class_kmers", "{sample}.{ref}.chrY-regions.err-struct-base.bed"
+        )
+    run:
+        import pandas as pd
+
+        regions = pd.read_csv(input.regions, sep="\t", header=0)
+        kmers = pd.read_csv(input.regions, sep="\t", header=0, usecols=["#seq", "start", "end"])
+        kmers["label"] = "ERRBASE"
+        kmers["score"] = 0
+        kmers["strand"] = "+"
+
+        concat = pd.concat([regions, kmers], axis=0, ignore_index=False)
+        concat.sort_values(["#seq", "start", "end"], inplace=True)
+        assert not pd.isnull(concat).any(axis=0).any()
+
+        concat.to_csv(output.bed, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+rule fill_remaining_gaps:
+    """There can still be some small gaps
+    in the annotation following the way the
+    error windows are defined (fixed 1 kbp
+    boundaries).
+    """
+    input:
+        sizes = rules.dump_genome_seq_sizes.output.tsv,
+        regions = rules.add_kmer_blocks.output.bed
+    output:
+        bed = SUB_WD.joinpath("suppl", "fill_gaps", "{sample}.{ref}.fillers.bed")
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    shell:
+        "bedtools complement -i {input.regions} -g {input.sizes} > {output}"
+
+
+localrules: add_gap_fillers_to_annotation
+rule add_gap_fillers_to_annotation:
+    input:
+        gaps = rules.fill_remaining_gaps.output.bed,
+        regions = rules.add_kmer_blocks.output.bed
+    output:
+        bed = SUB_WD.joinpath(
+            "results", "seq_annotation",
+            "{sample}.{ref}.chrY-regions.err-struct-base.bed"
+        )
+    run:
+        import pandas as pd
+
+        regions = pd.read_csv(input.regions, sep="\t", header=0)
+        gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
+        if gaps.empty:
+            regions.to_csv(output.bed, sep="\t", header=True, index=False)
+        else:
+            gaps["score"] = 500
+            gaps["name"] = "UNASSIGNED"
+            gaps["strand"] = "+"
+            regions = pd.concat([regions, gaps], axis=0, ignore_index=False)
+            assert not pd.isnull(regions).any(axis=0).any()
+            regions.sort_values(["#seq", "start", "end"], inplace=True)
+            regions.to_csv(output.bed, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_annotate_regions:
     input:
         label_beds = expand(
-            rules.add_kmer_high_res_blocks.output.tsv,
+            rules.add_gap_fillers_to_annotation.output.bed,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
-
-        # label_beds = expand(
-        #     rules.label_and_merge_windows.output.bed,
-        #     sample=SAMPLES,
-        #     ref=list(MODULE_REF_GENOMES.keys())
-        # ),
