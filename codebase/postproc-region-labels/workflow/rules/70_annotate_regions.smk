@@ -221,7 +221,7 @@ rule add_kmer_high_res_blocks:
         kmers["other_support"] = "none"
         kmers["other_orientation"] = "."
         kmers["win_pctile"] = -1
-        kmers["overlap_bp"] = 0
+        kmers["overlap_bp"] = -1
         kmers["win_start"] = -1
         kmers["win_end"] = -1
         kmers["win_name"] = "UNK"
@@ -237,6 +237,8 @@ rule add_kmer_high_res_blocks:
                     concat[cn] = concat[cn].fillna(-1)
                 if "_label" in cn:
                     concat[cn] = concat[cn].fillna("UNK")
+                if cn == "error_base":
+                    concat[cn] = concat[cn].fillna(-1)
             na_cols = pd.isna(concat).any(axis=0)
             if na_cols.any():
                 column_names = concat.columns[na_cols]
