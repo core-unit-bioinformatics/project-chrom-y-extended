@@ -234,7 +234,11 @@ rule add_kmer_blocks:
 
         concat = pd.concat([regions, kmers], axis=0, ignore_index=False)
         concat.sort_values(["#seq", "start", "end"], inplace=True)
-        assert not pd.isnull(concat).any(axis=0).any()
+        na_cols = pd.isnull(concat).any(axis=0)
+        if na_cols:
+            col_names = pd.columns[na_cols]
+            print(col_names)
+            assert not pd.isnull(concat).any(axis=0).any()
 
         concat.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
