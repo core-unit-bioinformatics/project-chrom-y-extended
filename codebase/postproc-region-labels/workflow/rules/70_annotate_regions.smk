@@ -237,8 +237,11 @@ rule add_kmer_high_res_blocks:
                     concat[cn] = concat[cn].fillna(-1)
                 if "_label" in cn:
                     concat[cn] = concat[cn].fillna("UNK")
-            print(column_names)
-            raise ValueError(f"missing values: {column_names}")
+            na_cols = pd.isna(concat).any(axis=0)
+            if na_cols.any():
+                column_names = concat.columns[na_cols]
+                print(column_names)
+                raise ValueError(f"missing values: {column_names}")
         concat.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
