@@ -90,9 +90,9 @@ rule set_error_windows:
     input:
         isect = rules.intersect_labels_and_qc.output.isect,
         qc_header = rules.merge_qc_track_intersections.output.header,
-        seqclass_header = rules.merge_gaps_into_seqclass_labels.output.header
+        seqclass_header = rules.merge_gaps_into_seqclass_labels.output.header,
     output:
-        tsv = SUB_WD.joinpath("suppl", "add_err_windows", "{sample}.{ref}.chrY-regions.qc-win.err-strict.tsv")
+        tsv = SUB_WD.joinpath("suppl", "add_err_windows", "{sample}.{ref}.chrY-regions.qc-win.err-struct-basewin.tsv")
     run:
         import pandas as pd
 
@@ -103,17 +103,6 @@ rule set_error_windows:
 
         columns = load_header(input.seqclass_header) + load_header(input.qc_header) + ["overlap_bp"]
 
-        # reheader intersection
-        # columns = [
-        #     "seq", "start", "end", "name", "score", "strand",
-        #     "thickStart", "thickEnd", "assign_method",
-        #     "second_best_guess", "kmer_top_enrich", "other_support",
-        #     "other_orientation", "cluster_id",
-        #     "seq2", "win_start", "win_end", "win_name", "win_pctile",
-        #     "flagger_label", "flagger_is_clean",
-        #     "nucflag_label", "nucflag_is_clean",
-        #     "overlap_bp"
-        # ]
         df = pd.read_csv(input.isect, sep="\t", header=None, names=columns)
         df.drop(["cluster_id"], axis=1, inplace=True)
 
@@ -122,8 +111,13 @@ rule set_error_windows:
         select_nucflag_hifi_dirty = df["nucflag_hifi_is_clean"] == 0  # False / not clean
         select_nucflag_ont_dirty = df["nucflag_ont_is_clean"] == 0  # False / not clean
 
+        select_kmer_dirty = df["kmer_errors_is_clean"] == 0  # False / not clean
+
+        # 2026-01-06
+        # decision: flagger/nucflag errors are labeled as "structural errors";
+        # bases flagged by erroneous k-mers are labeled as "base errors"
         # strict: require error flag from all tools
-        select_strict_dirty = (
+        select_struct_errors = (
             select_flagger_hifi_dirty
             &
             select_flagger_ont_dirty
@@ -132,51 +126,99 @@ rule set_error_windows:
             &
             select_nucflag_ont_dirty
         )
-        df["error_strict"] = 0
-        df.loc[select_strict_dirty, "error_strict"] = 1
-        # lenient: require only one error flag
-        select_lenient_dirty = (
-            select_flagger_hifi_dirty
-            |
-            select_flagger_ont_dirty
-            |
-            select_nucflag_hifi_dirty
-            |
-            select_nucflag_ont_dirty
-        )
-        df["error_lenient"] = 0
-        df.loc[select_lenient_dirty, "error_lenient"] = 1
+        df["error_struct"] = 0
+        df.loc[select_strict_dirty, "error_struct"] = 1
+
+        df["error_base_win"] = 0
+        df.loc[select_kmer_dirty, "error_base_win"] = 1
 
         add_error_regions = []
-        drop_rows = []
+        drop_rows = set()
         for row in df.itertuples(index=True):
             # Decision from chrY call on Nov. 11.
             # only consider windows flagged by both
             # tools (strict criterion) as true errors
-            if row.error_strict == 1:
+            if row.error_struct == 1:
+                err_label = "ERRSTRUCT"
+                assign_method = "qcflag"
                 new_row = row._asdict()
                 del new_row["Index"]
                 # change seq coord to window coord
                 new_row["start"] = row.win_start
                 new_row["end"] = row.win_end
-                new_row["name"] = "ERR"
+                new_row["name"] = err_label
                 new_row["score"] = 0
-                new_row["second_best_guess"] = "ERR"
-                new_row["assign_method"] = "qcflag"
+                new_row["second_best_guess"] = err_label
+                new_row["assign_method"] = assign_method
                 add_error_regions.append(new_row)
                 if row.name == "UNASSIGNED":
                     # unassigned blocks that are labeled as errors can
                     # just be dropped from the list of regions
-                    drop_rows.append(row.Index)
+                    drop_rows.add(row.Index)
+            if row.error_base_win == 1:
+                err_label = "ERRBASEWIN"
+                assign_method = "kmer"
+                new_row = row._asdict()
+                del new_row["Index"]
+                # change seq coord to window coord
+                new_row["start"] = row.win_start
+                new_row["end"] = row.win_end
+                new_row["name"] = err_label
+                new_row["score"] = 0
+                new_row["second_best_guess"] = err_label
+                new_row["assign_method"] = assign_method
+                add_error_regions.append(new_row)
+                if row.name == "UNASSIGNED":
+                    # unassigned blocks that are labeled as errors can
+                    # just be dropped from the list of regions
+                    drop_rows.add(row.Index)
+
         df.drop(drop_rows, axis=0, inplace=True)
 
         add_error_regions = pd.DataFrame.from_records(add_error_regions)
         # the mix-in of the curated hmmer calls can lead to duplicates;
         # drop them and arbitrarily keep the first error windows
-        add_error_regions.drop_duplicates(["seq", "start", "end"], keep="first", inplace=True)
+        add_error_regions.drop_duplicates(["seq", "start", "end", "name"], keep="first", inplace=True)
         df = pd.concat([df, add_error_regions], axis=0, ignore_index=False)
         df.sort_values(["seq", "start", "end"], axis=0, inplace=True)
         df.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+localrules: add_kmer_high_res_blocks
+rule add_kmer_high_res_blocks:
+    input:
+        kmer_track = expand(
+            rules.filter_sequences_to_sex_chrom.output.bed,
+            qc_track="kmer_errors",
+            allow_missing=True
+        ),
+        window_track = rules.set_error_windows.output.tsv
+    output:
+        tsv = SUB_WD.joinpath("suppl", "add_high_res_kmer", "{sample}.{ref}.chrY-regions.qc-win.err-struct-base-win.tsv")
+    run:
+        import pandas as pd
+        kmers = pd.read_csv(
+            input.kmer_track, sep="\t", header=0,
+            usecols=["#seq", "start", "end", "strand"]
+        )
+        kmers.rename({"#seq": "seq"}, axis=1, inplace=True)
+        kmers["name"] = "ERRBASE"
+        kmers["score"] = 0
+        kmers["second_best_guess"] = "ERRBASE"
+        kmers["assign_method"] = "kmer"
+        kmers["error_base"] = 1
+        kmers["error_base_win"] = 1
+
+        err_win = pd.read_csv(input.window_track, sep="\t", header=0)
+        concat = pd.concat([err_win, kmers], axis=0, ignore_index=False)
+        concat.sort_values(["seq", "start", "end"], inplace=True)
+        na_cols = pd.isna(concat).any(axis=0)
+        if na_cols.any():
+            column_names = concat.columns[na_cols]
+            print(column_names)
+            raise ValueError(f"missing values: {column_names}")
+        concat.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
@@ -206,7 +248,13 @@ rule label_and_merge_windows:
 rule run_all_annotate_regions:
     input:
         label_beds = expand(
-            rules.label_and_merge_windows.output.bed,
+            rules.add_kmer_high_res_blocks.output.tsv,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
+
+        # label_beds = expand(
+        #     rules.label_and_merge_windows.output.bed,
+        #     sample=SAMPLES,
+        #     ref=list(MODULE_REF_GENOMES.keys())
+        # ),
