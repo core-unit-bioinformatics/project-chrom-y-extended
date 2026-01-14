@@ -202,15 +202,29 @@ rule add_kmer_high_res_blocks:
         # is a Snakemake Namedlist
         kmers = pd.read_csv(
             input.kmer_track[0], sep="\t", header=0,
-            usecols=["#seq", "start", "end", "strand"]
+            usecols=[
+                "#seq", "start", "end", "strand",
+            ]
         )
         kmers.rename({"#seq": "seq"}, axis=1, inplace=True)
+        kmers["seq2"] = kmers["seq"]
+        kmers["thickStart"] = kmers["start"]
+        kmers["thickEnd"] = kmers["end"]
         kmers["name"] = "ERRBASE"
         kmers["score"] = 0
         kmers["second_best_guess"] = "ERRBASE"
         kmers["assign_method"] = "kmer"
         kmers["error_base"] = 1
-        kmers["error_base_win"] = 1
+        kmers["error_base_win"] = -1
+        kmers["error_struct"] = -1
+        kmers["kmer_top_enrich"] = 0.
+        kmers["other_support"] = "none"
+        kmers["other_orientation"] = "."
+        kmers["win_pctile"] = -1
+        kmers["overlap_bp"] = 0
+        kmers["win_start"] = -1
+        kmers["win_end"] = -1
+        kmers["win_name"] = "UNK"
 
         err_win = pd.read_csv(input.window_track, sep="\t", header=0)
         concat = pd.concat([err_win, kmers], axis=0, ignore_index=False)
@@ -218,6 +232,11 @@ rule add_kmer_high_res_blocks:
         na_cols = pd.isna(concat).any(axis=0)
         if na_cols.any():
             column_names = concat.columns[na_cols]
+            for cn in column_names:
+                if "is_clean" in cn:
+                    concat[cn] = concat[cn].fillna(-1)
+                if "_label" in cn:
+                    concat[cn] = concat[cn].fillna("UNK")
             print(column_names)
             raise ValueError(f"missing values: {column_names}")
         concat.to_csv(output.tsv, sep="\t", header=True, index=False)
