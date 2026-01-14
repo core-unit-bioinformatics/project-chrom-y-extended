@@ -66,6 +66,9 @@ rule filter_sequences_to_sex_chrom:
             # this is potentially fine for a known off-by-one in NucFlag/hifi
             if wildcards.qc_track == "nucflag_hifi":
                 assert qc_flagged_regions["start"].iloc[0] == 1, f"Malformed QC regions: {qc_flagged_regions.head()}"
+            elif wildcards.qc_track == "kmer_errors":
+                # can start anywhere, any first coordinate is fine
+                pass
             else:
                 raise
         # update: Glennis Logsdon said it is ok to filter out HET
