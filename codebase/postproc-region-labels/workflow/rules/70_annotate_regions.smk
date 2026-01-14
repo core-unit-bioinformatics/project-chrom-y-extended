@@ -213,8 +213,12 @@ rule label_and_merge_windows:
 localrules: add_kmer_blocks
 rule add_kmer_blocks:
     input:
-        regions = ,
-        kmers =
+        regions = rules.label_and_merge_windows.output.bed,
+        kmers = expand(
+            rules.filter_sequences_to_sex_chrom.output.bed,
+            qc_track="kmer_errors",
+            allow_missing=True
+        )
     output:
         bed = SUB_WD.joinpath(
             "suppl", "seq_class_kmers", "{sample}.{ref}.chrY-regions.err-struct-base.bed"
@@ -223,7 +227,7 @@ rule add_kmer_blocks:
         import pandas as pd
 
         regions = pd.read_csv(input.regions, sep="\t", header=0)
-        kmers = pd.read_csv(input.regions, sep="\t", header=0, usecols=["#seq", "start", "end"])
+        kmers = pd.read_csv(input.kmers[0], sep="\t", header=0, usecols=["#seq", "start", "end"])
         kmers["label"] = "ERRBASE"
         kmers["score"] = 0
         kmers["strand"] = "+"
