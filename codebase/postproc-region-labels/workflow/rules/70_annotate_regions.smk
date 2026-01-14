@@ -228,15 +228,15 @@ rule add_kmer_blocks:
 
         regions = pd.read_csv(input.regions, sep="\t", header=0)
         kmers = pd.read_csv(input.kmers[0], sep="\t", header=0, usecols=["#seq", "start", "end"])
-        kmers["label"] = "ERRBASE"
+        kmers["name"] = "ERRBASE"
         kmers["score"] = 0
         kmers["strand"] = "+"
 
         concat = pd.concat([regions, kmers], axis=0, ignore_index=False)
         concat.sort_values(["#seq", "start", "end"], inplace=True)
         na_cols = pd.isnull(concat).any(axis=0)
-        if na_cols:
-            col_names = pd.columns[na_cols]
+        if na_cols.any():
+            col_names = concat.columns[na_cols]
             print(col_names)
             assert not pd.isnull(concat).any(axis=0).any()
 
