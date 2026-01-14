@@ -149,6 +149,7 @@ def extract_second_best_guess(asm_cutout_window):
         # 01n_PAR1::NA21093_chrY:757-148195
         parts = asm_cutout_window.split("::")[0]
         label = parts.split("_", 1)[-1]  # remove order prefix
+        label = normalize_invrep_color_blocks(label)
         return label
 
 
@@ -257,10 +258,15 @@ INVREP_COLOR_BLOCK_PATTERN = re.compile("^IR[0-9]\\-[bgyr][0-9]$")
 
 def normalize_invrep_color_blocks(label):
 
-    mobj = INVREP_COLOR_BLOCK_PATTERN.match(label)
+    if LABEL_ORDER_PREFIX.match(label) is not None:
+        check_label = label.split("_", 1)[1]
+    else:
+        check_label = label
+
+    mobj = INVREP_COLOR_BLOCK_PATTERN.match(check_label)
     if mobj is None:
         return label
-    invrep, color = label.split("-")
+    invrep, color = check_label.split("-")
     color = SINGLE_CHAR_COLOR_CODES[color[0]]
     new_label = f"{color}-{invrep}"
     return new_label
