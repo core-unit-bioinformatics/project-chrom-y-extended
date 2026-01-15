@@ -289,10 +289,45 @@ rule add_gap_fillers_to_annotation:
     # END OF RUN BLOCK
 
 
+rule check_all_bases_covered:
+    input:
+        sizes = rules.dump_genome_seq_sizes.output.tsv,
+        regions = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        check = SUB_WD.joinpath("suppl", "sanity_check", "{sample}.{ref}.chrY-regions.check.ok")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    run:
+        import pandas as pd
+        import numpy as np
+
+        regions = pd.read_csv(input.regions, sep="\t", header=0)
+        seq_sizes = dict()
+        with open(input.sizes) as listing:
+            for line in listing:
+                name, length = line.strip().split()
+                seq_sizes[name] = int(length)
+
+        for seq, seq_regions in regions.groupby("seq"):
+            indicator = np.zeros(seq_sizes[seq], dtype=bool)
+            for row in seq_regions.itertuples():
+                indicator[row.start:row.end] |= True
+            total_covered = indicator.sum()
+            if total_covered != indicator.size:
+                err_msg = (
+                    f"Gaps remaining: {wildcards.sample} / {wildcards.ref}: "
+                    f"Should: {indicator.size} - Is: {total_covered}"
+                )
+                raise ValueError(err_msg)
+        with open(output.check):
+            pass
+    # END OF RUN BLOCK
+
+
 rule run_all_annotate_regions:
     input:
-        label_beds = expand(
-            rules.add_gap_fillers_to_annotation.output.bed,
+        check = expand(
+            rules.check_all_bases_covered.output.check
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
