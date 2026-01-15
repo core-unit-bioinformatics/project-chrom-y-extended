@@ -308,7 +308,7 @@ rule check_all_bases_covered:
                 name, length = line.strip().split()
                 seq_sizes[name] = int(length)
 
-        for seq, seq_regions in regions.groupby("seq"):
+        for seq, seq_regions in regions.groupby("#seq"):
             indicator = np.zeros(seq_sizes[seq], dtype=bool)
             for row in seq_regions.itertuples():
                 indicator[row.start:row.end] |= True
