@@ -319,7 +319,7 @@ rule check_all_bases_covered:
                     f"Should: {indicator.size} - Is: {total_covered}"
                 )
                 raise ValueError(err_msg)
-        with open(output.check):
+        with open(output.check, "w"):
             pass
     # END OF RUN BLOCK
 
