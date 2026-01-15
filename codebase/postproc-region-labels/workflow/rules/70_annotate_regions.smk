@@ -327,7 +327,7 @@ rule check_all_bases_covered:
 rule run_all_annotate_regions:
     input:
         check = expand(
-            rules.check_all_bases_covered.output.check
+            rules.check_all_bases_covered.output.check,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
