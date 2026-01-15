@@ -335,7 +335,13 @@ def merge_to_debug_regions(windows):
 
     assert windows.shape[0] > 1
 
-    if windows["name"].isin(["ERRSTRUCT"]).any():
+    # Decision on 2026-01-14 / PH
+    # the structural errors should be represented in the same way
+    # as the k-mer (base-level) errors on top of the other labels;
+    # added if False here to skip the code path that would ignore
+    # all other labels and just generate an ERRSTRUCT window
+    # for the respective region
+    if False and windows["name"].isin(["ERRSTRUCT"]).any():
         dbr = window_to_debug_region(
             windows.loc[windows["name"].isin(["ERRSTRUCT"]), :].iloc[0].to_dict()
         )
