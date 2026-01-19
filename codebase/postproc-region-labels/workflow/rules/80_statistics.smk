@@ -43,6 +43,42 @@ rule compute_label_dist_stats:
     # END OF RUN BLOCK
 
 
+localrules: merge_label_dist_stats
+rule merge_label_dist_stats:
+    input:
+        stats_tables = expand(
+            rules.compute_label_dist_stats.output.tsv,
+            sample=SAMPLES,
+            allow_missing=True
+        )
+    output:
+        tsv = SUB_WD.joinpath(
+            "results", "{ref}.label-dist-stats.tsv"
+        )
+    run:
+        import pathlib as pl
+        import pandas as pd
+
+        def set_seq_type(seq_name):
+            if seq_name.endswith("_chrY"):
+                return "main"
+            else:
+                assert "random" in seq_name
+                return "rand"
+
+        merged = []
+        for table_file in input.stats_tables:
+            sample = pl.Path(table_file).name.split(".")[0]
+            df = pd.read_csv(table_file, sep="\t", header=0)
+            df["sample"] = sample
+            df["seq_type"] = df["#seq"].apply(set_seq_type)
+            merged.append(df)
+        merged = pd.concat(merged, axis=0, ignore_index=False)
+        merged.sort_values(["sample", "#seq", "name"], inplace=True)
+        merged.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_label_dist_stats:
     input:
         tsv = expand(
