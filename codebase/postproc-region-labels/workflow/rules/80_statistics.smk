@@ -81,4 +81,4 @@ rule merge_label_dist_stats:
 
 rule run_all_label_dist_stats:
     input:
-        tsv = rule.merge_label_dist_stats.output.tsv
+        tsv = rules.merge_label_dist_stats.output.tsv
