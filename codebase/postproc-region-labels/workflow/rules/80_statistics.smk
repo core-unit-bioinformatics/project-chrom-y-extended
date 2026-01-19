@@ -81,4 +81,7 @@ rule merge_label_dist_stats:
 
 rule run_all_label_dist_stats:
     input:
-        tsv = rules.merge_label_dist_stats.output.tsv
+        tsv = expand(
+            rules.merge_label_dist_stats.output.tsv,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
