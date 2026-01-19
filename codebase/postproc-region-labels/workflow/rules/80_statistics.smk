@@ -5,7 +5,8 @@ SUB_WD = WD.joinpath("80-statistics")
 localrules: compute_label_dist_stats
 rule compute_label_dist_stats:
     input:
-        labels = rules.label_and_merge_windows.output.bed,
+        check = rules.check_all_bases_covered.output.check,
+        labels = rules.add_gap_fillers_to_annotation.output.bed,
         gsize = rules.dump_genome_seq_sizes.output.tsv
     output:
         tsv = SUB_WD.joinpath(
