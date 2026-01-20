@@ -53,7 +53,8 @@ rule merge_label_dist_stats:
         )
     output:
         tsv = SUB_WD.joinpath(
-            "results", "{ref}.label-dist-stats.tsv"
+            "results", "ref_merged_dist_stats",
+            "{ref}.label-dist-stats.tsv"
         )
     run:
         import pathlib as pl
