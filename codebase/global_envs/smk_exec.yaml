@@ -1,15 +1,40 @@
 name: smk_exec
 dependencies:
-  - python=3.11.*
-  - snakemake=8.27.*
-  - snakemake-executor-plugin-cluster-generic
+  - Python=3.11.*
+  - pip=25.1.*
+  - conda
+  - snakemake=9.8.*
+  - snakemake-interface-common=1.21.*
+  - snakemake-executor-plugin-cluster-generic=1.0.*
   - coincbc=2.10.*
-  - toml=0.10.*
   - pyyaml=6.0.*
+  - toml=0.10.*
+  - semver=3.0.*
+  - portalocker=3.2.*
+  # =====
+  # minimal data science stack just
+  # for basic format conversion etc.
+  - pandas=2.3.*
+  - pytables=3.10.*
+  - hdf5=1.14.*
+  - pyarrow=20.0.*
+  - numpy=2.3.*
+  # === below:
+  # useful dep, no hard req. yet
+  # note to devs:
+  # if any of these pkg. is used
+  # explicitly in a template
+  # function, move the package up
+  - psutil=7.0.*
+  - pydantic=2.11.*
+  - smart_open=7.3.*
+  - humanfriendly=10.*
+  - requests=2.32.*
+  # =====
+  # specific to this project
   - dnaio=1.2.*
   - xopen=2.0.*
   - pbzip2=1.1.*
   - py-bgzip=0.5.*
   - pigz=2.8.*
-  - pandas=2.2.*
-  - numpy=2.2.*
+
