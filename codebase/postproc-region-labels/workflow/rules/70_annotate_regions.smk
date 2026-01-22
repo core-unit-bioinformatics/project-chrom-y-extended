@@ -336,7 +336,11 @@ rule subtract_ngaps:
     shell:
         "bedtools subtract -a {input.regions} -b {input.ngaps} > {output.prelim}"
             " && "
-        "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin > {output.final}"
+        "echo \"#seq start end name score strand\" | awk 'BEGIN{OFS=\"\t\"} {print $1,$2,$3,$4,$5}' > {output.final}"
+            " && "
+        "echo >> {output.final}"
+            " && "
+        "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin >> {output.final}"
 
 
 rule check_all_bases_covered:
