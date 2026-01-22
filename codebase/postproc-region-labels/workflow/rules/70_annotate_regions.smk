@@ -255,7 +255,19 @@ rule add_kmer_blocks:
     run:
         import pandas as pd
 
+        def assert_values(df):
+            try:
+                assert (df["start"].astype(int) >= 0).all()
+                assert (df["end"].astype(int) >= 0).all()
+                assert (df["score"].astype(int) >= 0).all()
+                assert (df["strand"].isin(["+", "-"]).all())
+            except (AssertionError, ValueError):
+                print(regions.head(10))
+                raise
+            return
+
         regions = pd.read_csv(input.regions, sep="\t", header=0)
+        assert_values(regions)
         kmers = pd.read_csv(input.kmers[0], sep="\t", header=0, usecols=["#seq", "start", "end"])
         kmers["name"] = "ERRBASE"
         kmers["score"] = 0
@@ -270,6 +282,7 @@ rule add_kmer_blocks:
             assert not pd.isnull(concat).any(axis=0).any()
         column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
         concat = concat[column_sort_order]
+        assert_values(concat)
         concat.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
@@ -305,11 +318,14 @@ rule add_gap_fillers_to_annotation:
         import pandas as pd
 
         def assert_values(df):
-
-            assert (df["start"].astype(int) >= 0).all()
-            assert (df["end"].astype(int) >= 0).all()
-            assert (df["score"].astype(int) >= 0).all()
-            assert (df["strand"].isin(["+", "-"]).all())
+            try:
+                assert (df["start"].astype(int) >= 0).all()
+                assert (df["end"].astype(int) >= 0).all()
+                assert (df["score"].astype(int) >= 0).all()
+                assert (df["strand"].isin(["+", "-"]).all())
+            except (AssertionError, ValueError):
+                print(regions.head(10))
+                raise
             return
 
         regions = pd.read_csv(input.regions, sep="\t", header=0)
@@ -317,12 +333,7 @@ rule add_gap_fillers_to_annotation:
         if gaps.empty:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
-            try:
-                assert_values(regions)
-            except AssertionError:
-                print("no gaps")
-                print(regions.head(10))
-                raise
+            assert_values(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
@@ -333,12 +344,7 @@ rule add_gap_fillers_to_annotation:
             regions.sort_values(["#seq", "start", "end"], inplace=True)
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
-            try:
-                assert_values(regions)
-            except AssertionError:
-                print("gaps")
-                print(regions.head(10))
-                raise
+            assert_values(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
