@@ -338,8 +338,6 @@ rule subtract_ngaps:
             " && "
         "echo \"#seq start end name score strand\" | awk 'BEGIN{{OFS=\"\t\"}} {{print $1,$2,$3,$4,$5}}' > {output.final}"
             " && "
-        "echo >> {output.final}"
-            " && "
         "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin >> {output.final}"
 
 
