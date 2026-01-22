@@ -330,7 +330,7 @@ rule subtract_ngaps:
             "{sample}.{ref}.chrY-regions.ngaps.err-struct-base.bed"
         )
     conda:
-        GLOBAL_CONDA_ENVS.joinpath("seqtools.smk")
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
