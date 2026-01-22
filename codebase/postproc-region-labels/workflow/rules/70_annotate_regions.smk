@@ -35,7 +35,7 @@ rule dump_sequence_ngaps:
 
         ngaps = []
         ngaps.append(("#seq", "start", "end", "name", "score", "strand"))
-        with dnaio.open(input, fasta) as fasta:
+        with dnaio.open(input.fasta) as fasta:
             for record in fasta:
                 seqname = record.name
                 for mobj in n_gap.finditer(record.sequence):
