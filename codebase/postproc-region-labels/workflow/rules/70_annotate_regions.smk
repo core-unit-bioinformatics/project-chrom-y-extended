@@ -317,7 +317,12 @@ rule add_gap_fillers_to_annotation:
         if gaps.empty:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
-            assert_values(regions)
+            try:
+                assert_values(regions)
+            except AssertionError:
+                print("no gaps")
+                print(regions.head(10))
+                raise
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
@@ -328,7 +333,12 @@ rule add_gap_fillers_to_annotation:
             regions.sort_values(["#seq", "start", "end"], inplace=True)
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
-            assert_values(regions)
+            try:
+                assert_values(regions)
+            except AssertionError:
+                print("gaps")
+                print(regions.head(10))
+                raise
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
