@@ -307,6 +307,8 @@ rule add_gap_fillers_to_annotation:
         regions = pd.read_csv(input.regions, sep="\t", header=0)
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
         if gaps.empty:
+            column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
+            regions = regions[column_sort_order]
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
