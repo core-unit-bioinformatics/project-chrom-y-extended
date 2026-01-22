@@ -20,6 +20,35 @@ rule dump_genome_seq_sizes:
     # END OF RUN BLOCK
 
 
+rule dump_sequence_ngaps:
+    input:
+        fasta = lambda wildcards: get_sample_file(SAMPLE_SHEET, wildcards.sample, "input_path")
+    output:
+        bed = SUB_WD.joinpath("suppl", "seq_ngaps", "{sample}.ngaps.bed")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    run:
+        import dnaio
+        import re
+
+        n_gap = re.compile("[Nn]+")
+
+        ngaps = []
+        ngaps.append(("#seq", "start", "end", "name", "score", "strand"))
+        with dnaio.open(input, fasta) as fasta:
+            for record in fasta:
+                seqname = record.name
+                for mobj in n_gap.finditer(record.sequence):
+                    start, end = mobj.span()
+                    ngaps.append((seqname, str(start), str(end), "NGAP", "0", "+"))
+
+        # contains at least the header line, i.e. output is non-empty
+        with open(output.bed, "w") as bedfile:
+            for ngap in ngaps:
+                bedfile.write("\t".join(ngap) + "\n")
+    # END OF RUN BLOCK
+
+
 rule create_gap_track:
     input:
         sizes = rules.dump_genome_seq_sizes.output.tsv,
@@ -268,7 +297,7 @@ rule add_gap_fillers_to_annotation:
         regions = rules.add_kmer_blocks.output.bed
     output:
         bed = SUB_WD.joinpath(
-            "results", "seq_annotation",
+            "suppl", "annot_gaps_filled",
             "{sample}.{ref}.chrY-regions.err-struct-base.bed"
         )
     run:
@@ -289,10 +318,31 @@ rule add_gap_fillers_to_annotation:
     # END OF RUN BLOCK
 
 
+# subtract the ngap regions
+rule subtract_ngaps:
+    input:
+        regions = rules.add_gap_fillers_to_annotation.output.bed,
+        ngaps = rules.dump_sequence_ngaps.output.bed
+    output:
+        prelim = SUB_WD.joinpath("suppl", "ngap_subtract", "{sample}.{ref}.ngaps_subtracted.bed"),
+        final = SUB_WD.joinpath(
+            "results", "seq_annotation",
+            "{sample}.{ref}.chrY-regions.ngaps.err-struct-base.bed"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.smk")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bedtools subtract -a {input.regions} -b {input.ngaps} > {output.prelim}"
+            " && "
+        "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin > {output.final}"
+
+
 rule check_all_bases_covered:
     input:
         sizes = rules.dump_genome_seq_sizes.output.tsv,
-        regions = rules.add_gap_fillers_to_annotation.output.bed
+        regions = rules.subtract_ngaps.output.final
     output:
         check = SUB_WD.joinpath("suppl", "sanity_check", "{sample}.{ref}.chrY-regions.check.ok")
     resources:
