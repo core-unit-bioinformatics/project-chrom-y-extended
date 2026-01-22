@@ -412,7 +412,7 @@ def merge_clustered_windows(clustered_windows):
         reg = MergedRegion(
             windows["seq"].iloc[0], windows["start"].min(),
             windows["end"].max(), windows["name"].iloc[0],
-            windows["strand"].iloc[0], windows["score"].max()
+            windows["score"].max(), windows["strand"].iloc[0],
         )
         final_regions.append(reg)
     final_regions = pd.DataFrame.from_records(final_regions, columns=MergedRegion._fields)
