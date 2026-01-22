@@ -268,7 +268,8 @@ rule add_kmer_blocks:
             col_names = concat.columns[na_cols]
             print(col_names)
             assert not pd.isnull(concat).any(axis=0).any()
-
+        column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
+        concat = concat[column_sort_order]
         concat.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
@@ -308,12 +309,14 @@ rule add_gap_fillers_to_annotation:
         if gaps.empty:
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
-            gaps["score"] = 500
             gaps["name"] = "UNASSIGNED"
+            gaps["score"] = 500
             gaps["strand"] = "+"
             regions = pd.concat([regions, gaps], axis=0, ignore_index=False)
             assert not pd.isnull(regions).any(axis=0).any()
             regions.sort_values(["#seq", "start", "end"], inplace=True)
+            column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
+            regions = regions[column_sort_order]
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
