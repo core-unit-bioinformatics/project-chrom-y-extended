@@ -304,11 +304,20 @@ rule add_gap_fillers_to_annotation:
     run:
         import pandas as pd
 
+        def assert_values(df):
+
+            assert (df["start"].astype(int) >= 0).all()
+            assert (df["end"].astype(int) >= 0).all()
+            assert (df["score"].astype(int) >= 0).all()
+            assert (df["strand"].isin(["+", "-"]).all())
+            return
+
         regions = pd.read_csv(input.regions, sep="\t", header=0)
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
         if gaps.empty:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
+            assert_values(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
@@ -319,6 +328,7 @@ rule add_gap_fillers_to_annotation:
             regions.sort_values(["#seq", "start", "end"], inplace=True)
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
+            assert_values(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
