@@ -336,7 +336,7 @@ rule subtract_ngaps:
     shell:
         "bedtools subtract -a {input.regions} -b {input.ngaps} > {output.prelim}"
             " && "
-        "echo \"#seq start end name score strand\" | awk 'BEGIN{{OFS=\"\t\"}} {{print $1,$2,$3,$4,$5}}' > {output.final}"
+        "echo \"#seq start end name score strand\" | awk 'BEGIN{{OFS=\"\t\"}} {{print $1,$2,$3,$4,$5,$6}}' > {output.final}"
             " && "
         "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin >> {output.final}"
 
