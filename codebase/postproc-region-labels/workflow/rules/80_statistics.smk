@@ -86,3 +86,29 @@ rule run_all_label_dist_stats:
             rules.merge_label_dist_stats.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
         )
+
+
+### self-overlap statistics
+
+rule compute_region_self_overlap:
+    input:
+        regions = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        isect = SUB_WD.joinpath(
+            "suppl", "self_overlap", "{sample}.{ref}.annot-isect.tsv"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bedtools intersect -wo -a {input.regions} -b {input.regions} > {output.isect}"
+
+
+rule run_all_self_overlaps:
+    input:
+        tsv = expand(
+            rules.compute_region_self_overlap.output.isect,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
