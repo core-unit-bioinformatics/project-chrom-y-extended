@@ -127,7 +127,7 @@ rule aggregate_self_overlap_table:
         grouping = header1 + ["name2"]
 
         agg = df.groupby(grouping)["overlap_bp"].sum()
-        agg.reset_index(drop=False, inplace=True)
+        agg = agg.reset_index(drop=False, inplace=False)
         agg["length"] = agg["end1"] - agg["end2"]
         agg["overlap_pct"] = (agg["overlap_bp"] / agg["length"] * 100).round(3)
 
