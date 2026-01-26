@@ -115,6 +115,7 @@ rule aggregate_self_overlap_table:
         )
     run:
         import pandas as pd
+
         plain_header = ["seq", "start", "end", "name", "score", "strand"]
         header1 = [f"{hd}1" for hd in plain_header]
         header2 = [f"{hd}2" for hd in plain_header]
@@ -131,14 +132,53 @@ rule aggregate_self_overlap_table:
         agg["length"] = agg["end1"] - agg["start1"]
         agg["overlap_pct"] = (agg["overlap_bp"] / agg["length"] * 100).round(3)
 
+        reheader = [c.strip("1") for c in agg.columns]
+        agg.columns = reheader
+
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+localrules:
+rule merge_self_overlap_stats:
+    input:
+        ovl_stats = expand(
+            rules.aggregate_self_overlap_table.output.tsv,
+            sample=SAMPLES,
+            allow_missing=True
+        )
+    output:
+        tsv = SUB_WD.joinpath(
+            "results", "ref_merged_ovl_stats",
+            "{ref}.self-ovl-stats.tsv"
+        )
+    run:
+        import pathlib as pl
+        import pandas as pd
+
+        def set_seq_type(seq_name):
+            if seq_name.endswith("_chrY"):
+                return "main"
+            else:
+                assert "random" in seq_name
+                return "rand"
+
+        merged = []
+        for table_file in input.ovl_stats:
+            sample = pl.Path(table_file).name.split(".")[0]
+            df = pd.read_csv(table_file, sep="\t", header=0)
+            df["sample"] = sample
+            df["seq_type"] = df["seq"].apply(set_seq_type)
+            merged.append(df)
+
+        merged = pd.concat(merged, axis=0, ignore_index=False)
+        merged.sort_values(["sample", "seq", "start"], inplace=True)
+        merged.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
 rule run_all_self_overlaps:
     input:
         tsv = expand(
-            rules.aggregate_self_overlap_table.output.tsv,
-            sample=SAMPLES,
+            rules.merge_self_overlap_stats.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
         )
