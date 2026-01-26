@@ -108,7 +108,7 @@ rule compute_region_self_overlap:
 localrules: aggregate_self_overlap_table
 rule aggregate_self_overlap_table:
     input:
-        tsv = rules.subtract_ngaps.output.final
+        tsv = rules.compute_region_self_overlap.output.isect
     output:
         tsv = SUB_WD.joinpath(
             "suppl", "agg_self_ovl", "{sample}.{ref}.agg-isect.tsv"
