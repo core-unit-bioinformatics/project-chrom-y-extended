@@ -6,11 +6,11 @@ localrules: compute_label_dist_stats
 rule compute_label_dist_stats:
     input:
         check = rules.check_all_bases_covered.output.check,
-        labels = rules.add_gap_fillers_to_annotation.output.bed,
+        labels = rules.subtract_ngaps.output.final,
         gsize = rules.dump_genome_seq_sizes.output.tsv
     output:
         tsv = SUB_WD.joinpath(
-            "results", "label_dist_stats",
+            "suppl", "label_dist_stats",
             "{sample}.{ref}.label-dist-stats.tsv"
         )
     run:
@@ -92,7 +92,7 @@ rule run_all_label_dist_stats:
 
 rule compute_region_self_overlap:
     input:
-        regions = rules.add_gap_fillers_to_annotation.output.bed
+        regions = rules.subtract_ngaps.output.final
     output:
         isect = SUB_WD.joinpath(
             "suppl", "self_overlap", "{sample}.{ref}.annot-isect.tsv"
@@ -108,7 +108,7 @@ rule compute_region_self_overlap:
 localrules: aggregate_self_overlap_table
 rule aggregate_self_overlap_table:
     input:
-        tsv = rules.compute_region_self_overlap.output.isect
+        tsv = rules.subtract_ngaps.output.final
     output:
         tsv = SUB_WD.joinpath(
             "suppl", "agg_self_ovl", "{sample}.{ref}.agg-isect.tsv"
