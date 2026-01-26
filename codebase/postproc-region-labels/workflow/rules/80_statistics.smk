@@ -105,10 +105,37 @@ rule compute_region_self_overlap:
         "bedtools intersect -wo -a {input.regions} -b {input.regions} > {output.isect}"
 
 
+localrules: aggregate_self_overlap_table
+rule aggregate_self_overlap_table:
+    input:
+        tsv = rules.compute_region_self_overlap.output.isect
+    output:
+        tsv = SUB_WD.joinpath(
+            "suppl", "agg_self_ovl", "{sample}.{ref}.agg-isect.tsv"
+        )
+    run:
+        import pandas as pd
+        plain_header = ["seq", "start", "end", "name", "score", "strand"]
+        header1 = [f"{hd}1" for hd in plain_header]
+        header2 = [f"{hd}2" for hd in plain_header]
+        header = header1 + header2 + ["overlap_bp"]
+
+        df = pd.read_csv(input.tsv, sep="\t", header=None, names=header)
+        # drop self-overlap
+        df.loc[df["name1"] != df["name2"], :].copy()
+
+        grouping = header1 + ["name2"]
+
+        agg = df.groupby(grouping)["overlap_bp"].sum()
+
+        agg.to_csv(output.tsv, sep="\t", header=True, index=True)
+    # END OF RUN BLOCK
+
+
 rule run_all_self_overlaps:
     input:
         tsv = expand(
-            rules.compute_region_self_overlap.output.isect,
+            rules.aggregate_self_overlap_table.output.tsv,
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         )
