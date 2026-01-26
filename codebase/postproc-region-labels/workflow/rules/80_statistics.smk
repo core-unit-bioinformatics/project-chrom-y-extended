@@ -122,7 +122,7 @@ rule aggregate_self_overlap_table:
 
         df = pd.read_csv(input.tsv, sep="\t", header=None, names=header)
         # drop self-overlap
-        df.loc[df["name1"] != df["name2"], :].copy()
+        df = df.loc[df["name1"] != df["name2"], :].copy()
 
         grouping = header1 + ["name2"]
 
