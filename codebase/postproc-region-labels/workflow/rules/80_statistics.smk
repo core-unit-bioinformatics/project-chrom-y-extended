@@ -138,7 +138,8 @@ rule aggregate_self_overlap_table:
         agg.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
-localrules:
+
+localrules: merge_self_overlap_stats
 rule merge_self_overlap_stats:
     input:
         ovl_stats = expand(
