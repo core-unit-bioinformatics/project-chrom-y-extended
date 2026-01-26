@@ -131,7 +131,7 @@ rule aggregate_self_overlap_table:
         agg["length"] = agg["end1"] - agg["end2"]
         agg["overlap_pct"] = (agg["overlap_bp"] / agg["length"] * 100).round(3)
 
-        agg.to_csv(output.tsv, sep="\t", header=True, index=True)
+        agg.to_csv(output.tsv, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
 
