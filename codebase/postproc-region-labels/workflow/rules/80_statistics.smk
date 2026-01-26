@@ -127,6 +127,9 @@ rule aggregate_self_overlap_table:
         grouping = header1 + ["name2"]
 
         agg = df.groupby(grouping)["overlap_bp"].sum()
+        agg.reset_index(drop=False, inplace=True)
+        agg["length"] = agg["end1"] - agg["end2"]
+        agg["overlap_pct"] = (agg["overlap_bp"] / agg["length"] * 100).round(3)
 
         agg.to_csv(output.tsv, sep="\t", header=True, index=True)
     # END OF RUN BLOCK
