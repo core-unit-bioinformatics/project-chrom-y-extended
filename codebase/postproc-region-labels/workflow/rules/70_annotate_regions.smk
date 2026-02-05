@@ -391,25 +391,26 @@ rule add_gap_fillers_to_annotation:
                 last_name = row.name
             return
 
+        def assert_large(regions):
+            _THRESHOLD = 100
+            regions["length"] = regions["end"] - regions["start"]
+            sub = regions.loc[~regions["name"].isin(["ERRBASE", "UNASSIGNED", "NGAP"]), :]
+            if (sub["length"] < _THRESHOLD).any():
+                tiny = sub.loc[sub["length"] < _THRESHOLD, :]
+                print(tiny)
+                raise ValueError(f"Tiny regions in annotation: {tiny.shape[0]}")
+            regions.drop("length", axis=1, inplace=True)
+            return
+
         regions = pd.read_csv(input.regions, sep="\t", header=0)
-
-        # debug change...
-        regions["length"] = regions["end"] - regions["start"]
-        sub = regions.loc[regions["name"] != "ERRBASE", :]
-        if (sub["length"] < 100).any():
-            tiny = sub.loc[sub["length"] < 100, :].copy()
-            print(tiny)
-            raise ValueError("Tiny regions in annotation")
-        # debug end
-
-        regions.drop("length", axis=1, inplace=True)
-
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
+
         if gaps.empty:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
             assert_values(regions)
             assert_disjoint(regions)
+            assert_large(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
@@ -422,6 +423,7 @@ rule add_gap_fillers_to_annotation:
             regions = regions[column_sort_order]
             assert_values(regions)
             assert_disjoint(regions)
+            assert_large(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
