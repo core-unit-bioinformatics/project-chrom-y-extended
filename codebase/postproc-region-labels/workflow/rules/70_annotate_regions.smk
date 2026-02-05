@@ -340,7 +340,6 @@ rule subtract_ngaps:
         "cat {output.prelim} {input.ngaps} | bedtools sort -i /dev/stdin >> {output.gaps_added}"
 
 
-
 rule fill_remaining_gaps:
     """Unlikely, but there could still be
     some small gaps in the annotation
@@ -362,7 +361,7 @@ localrules: add_gap_fillers_to_annotation
 rule add_gap_fillers_to_annotation:
     input:
         gaps = rules.fill_remaining_gaps.output.bed,
-        regions = rules.add_kmer_blocks.output.bed
+        regions = rules.subtract_ngaps.output.gaps_added
     output:
         bed = SUB_WD.joinpath(
             "results", "seq_annotation",
