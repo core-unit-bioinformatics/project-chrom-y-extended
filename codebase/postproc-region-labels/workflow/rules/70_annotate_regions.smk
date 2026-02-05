@@ -384,17 +384,19 @@ rule add_gap_fillers_to_annotation:
         def assert_disjoint(df):
 
             last_row = None
-            last_seq = ""
-            last_name = ""
-            last_end = -1
             for row in df.itertuples():
+                if last_row is None:
+                    last_row = row
+                    continue
                 # note: because of table header #seq start end
                 # pandas auto-assigns _1 for #seq
-                if row._1 == last_seq and row.name == last_name and last_end >= row.start:
+                same_seq = row._1 == last_row._1
+                same_name = row.name == last_row.name
+                same_strand = row.strand == last_row.strand
+                overlaps = row.start <= last_row.end
+                conflicts = same_seq and same_name and same_strand and overlaps
+                if conflicts
                     raise ValueError(f"Non-disjoint: {row} / {last_row}")
-                last_seq = row._1
-                last_name = row.name
-                last_end = row.end
                 last_row = row
             return
 
