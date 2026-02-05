@@ -395,7 +395,7 @@ rule add_gap_fillers_to_annotation:
                 same_strand = row.strand == last_row.strand
                 overlaps = row.start <= last_row.end
                 conflicts = same_seq and same_name and same_strand and overlaps
-                if conflicts
+                if conflicts:
                     raise ValueError(f"Non-disjoint: {row} / {last_row}")
                 last_row = row
             return
