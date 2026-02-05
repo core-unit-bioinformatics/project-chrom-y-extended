@@ -397,9 +397,12 @@ rule add_gap_fillers_to_annotation:
         regions["length"] = regions["end"] - regions["start"]
         sub = regions.loc[regions["name"] != "ERRBASE", :]
         if (sub["length"] < 100).any():
-            print(sub)
+            tiny = sub.loc[sub["length"] < 100, :].copy()
+            print(tiny)
             raise ValueError("Tiny regions in annotation")
         # debug end
+
+        regions.drop("length", axis=1, inplace=True)
 
         gaps = pd.read_csv(input.gaps, sep="\t", header=None, names=["#seq", "start", "end"])
         if gaps.empty:
