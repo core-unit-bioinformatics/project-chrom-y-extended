@@ -384,13 +384,15 @@ rule add_gap_fillers_to_annotation:
 
         def assert_disjoint(df):
 
+            last_row = None
             last_name = ""
             last_end = -1
             for row in df.itertuples():
                 if row.name == last_name and last_end >= row.start:
-                    raise ValueError(f"Non-disjoint: {row}")
+                    raise ValueError(f"Non-disjoint: {row} / {last_row}")
                 last_name = row.name
                 last_end = row.end
+                last_row = row
             return
 
         def assert_large(regions):
