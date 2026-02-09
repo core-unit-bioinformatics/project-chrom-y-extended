@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse as argp
+import collections as col
 import pathlib as pl
+import re
 import sys
 
 import pandas as pd
@@ -16,20 +18,27 @@ def parse_command_line():
         "--input-aln", "-aln", "-a",
         type=lambda fp: pl.Path(fp).resolve(strict=True),
         dest="input_aln",
-        required=True
+        required=False,
+        default="NA20905.hg38.chrY-regions-realigned.norm-paf.tsv.gz"
     )
+
+    hg38 = "GRCh38-Y_regions_repeat-details.bed"
+    t2t = "HG002-Y_T2Tv2_regions_repeat-details.bed"
+
     parser.add_argument(
         "--input-regions", "-reg", "-r",
         type=lambda fp: pl.Path(fp).resolve(strict=True),
         dest="input_reg",
-        required=True
+        required=False,
+        default=hg38
     )
 
     parser.add_argument(
         "--output-regions", "-out", "-o",
         type=lambda fp: pl.Path(fp).resolve(strict=False),
         dest="output_reg",
-        required=True
+        required=False,
+        default="out.NA20905.hg38.bed"
     )
 
     args = parser.parse_args()
@@ -129,6 +138,26 @@ def add_asm_seq_offset(fasta_header):
     start, _ = seq_coord.split("-")
     offset = int(start)
     return offset
+
+
+def add_asm_seq_start(fasta_header):
+    return add_asm_seq_offset(fasta_header)
+
+
+def add_asm_seq_end(fasta_header):
+    """add_asm_seq_end _summary_
+
+    Args:
+        fasta_header (str): fasta seq. header like this "01n_PAR1::HG02040_chrY:0-40573"
+
+    Returns:
+        int: end, i.e., HG02040_chrY:0-40573 = 40573
+    """
+
+    seq_coord = fasta_header.split(":")[-1]
+    _, end = seq_coord.split("-")
+    end = int(end)
+    return end
 
 
 def add_asm_region_label(fasta_header):
@@ -281,6 +310,95 @@ def merge_aligned_regions(joined):
     return df
 
 
+def get_un_labels(regions):
+
+    match_un_label = re.compile("^[0-9]+[un]{1}")
+
+    un_labels = []
+    for row in regions.itertuples():
+        if not match_un_label.match(row.seqclass):
+            continue
+        un_labels.append(row.seqclass)
+        un_labels.append(row.name)
+
+    return un_labels
+
+
+def discard_enclosed_un_alignments(align, un_labels):
+
+    global_labels = col.defaultdict(list)
+
+    for row in align.itertuples():
+        if not any(label in row.query_name for label in un_labels):
+            continue
+        idx = row.Index
+        seq_name = add_asm_seq(row.query_name)
+        seq_start = add_asm_seq_start(row.query_name)
+        seq_end = add_asm_seq_end(row.query_name)
+        seq_label = add_asm_region_label(row.query_name)
+        seq_length = seq_end - seq_start
+        global_labels["Chromosome"].append(seq_name)
+        global_labels["Start"].append(seq_start)
+        global_labels["End"].append(seq_end)
+        global_labels["Name"].append(seq_label)
+        global_labels["length"].append(seq_length)
+        global_labels["pd_idx"].append(idx)
+
+    iv = pr.from_dict(global_labels)
+    iv = iv.cluster(slack=-1, count=True).df
+    drop_alignments = col.defaultdict(set)
+    for cluster, aln in iv.groupby("Cluster"):
+        # annoying that PyRanges seems not to be able
+        # to cluster and compute the fractional overlap
+        # at the same time... anyway...
+        for a in aln.itertuples():
+            for b in aln.itertuples():
+                if a.Name == b.Name:
+                    continue
+                ovl = min(a.End, b.End) - max(a.Start, b.Start)
+                dropped = 0
+                frac_a = ovl/a.length
+                frac_b = ovl/b.length
+                if frac_a >= 1:
+                    dropped += 1
+                    drop_alignments[a.Name].add(a.pd_idx)
+                if frac_b >= 1:
+                    dropped += 1
+                    drop_alignments[b.Name].add(b.pd_idx)
+                if dropped > 1:
+                    raise ValueError(f"double dropping: {a} - {b}")
+
+    # in principle not necessary, but maybe there will be
+    # a need for third heuristic on a "per label" basis
+    for label, label_alns in drop_alignments.items():
+        align.drop(label_alns, inplace=True)
+
+    align = align.reset_index(drop=True, inplace=False)
+
+    return align
+
+
+def check_missing_un_labels(sample_regions, un_labels):
+
+    sub_select = sample_regions["name"] == "uncertain"
+    fixes = []
+    for row in sample_regions.loc[sub_select, :].itertuples():
+        if not any(label in row.asm_cutout for label in un_labels):
+            continue
+        label = add_asm_region_label(row.asm_cutout)
+        if label in sample_regions["name"].values:
+            # label already exists, do not foce another
+            # one into the annotation
+            continue
+        fixes.append((row.Index, label))
+
+    for idx, label in fixes:
+        sample_regions.loc[idx, "name"] = label
+        sample_regions.loc[idx, "score"] = 250
+
+    return sample_regions
+
+
 def main():
 
     args = parse_command_line()
@@ -292,6 +410,28 @@ def main():
     regions.rename({"#chrom": "chrom"}, axis=1, inplace=True)
 
     align = pd.read_csv(args.input_aln, sep="\t", header=0)
+
+    # 2026-02-06
+    # add external knowledge to the process and filter as follows:
+    # (1) umbrella (u) or default (n) seq. class labels that have
+    # alignments that are fully enclosed by other u or n seq. class
+    # label alignments are discarded (the respective alignments).
+    # (2) [final step below]: "uncertain" regions that represent
+    # an umbrella (u) or default (n) label are added back into
+    # the region set; this fixes the missing AMPL1 label in
+    # the T2Tv2-based labeling because of a reference bias;
+    # In the T2Tv2 labeling, the AMPL1_IR3 (hg38) is split into
+    # AMPL1 and IR3 and the AMPL1 candidate alignments
+    # (example: sample HG04228) have their best matches to
+    # AMPL2 (end) and IR3 and there is thus no label match
+    # from AMPL1 to AMPL1
+
+    # apply heuristic number 1: discard fully enclosed
+    # umbrella/global seq. class alignments; this is NOT
+    # done for the "subsumed" (s) seq. class terms.
+    un_labels = get_un_labels(regions)
+
+    align = discard_enclosed_un_alignments(align, un_labels)
 
     joined = join_region_labels(align, regions)
 
@@ -314,6 +454,10 @@ def main():
     joined["asm_seq_offset"] = joined["asm_seq_name"].apply(add_asm_seq_offset)
 
     df = merge_aligned_regions(joined)
+
+    # apply second heuristic
+    df = check_missing_un_labels(df, un_labels)
+
     df.rename({"seq": "#chrom"}, axis=1, inplace=True)
 
     args.output_reg.parent.mkdir(exist_ok=True, parents=True)
