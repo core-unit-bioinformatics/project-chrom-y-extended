@@ -406,7 +406,13 @@ rule add_gap_fillers_to_annotation:
             # ERRSTRUCT added here because of NucFlag apparently also
             # labeling N-gaps as errors (whereas flagger does not);
             # i.e., this is a decision to achieve consistency
-            sub = regions.loc[~regions["name"].isin(["ERRBASE", "ERRSTRUCT", "UNASSIGNED", "NGAP"]), :]
+            special_labels = ["ERRBASE", "ERRSTRUCT", "UNASSIGNED", "NGAP"]
+            # label "periCEN": artificially added in the process of pasting
+            # in the centromere window from Glennis' group. If that window
+            # largely overlapped the existing label, then this may also
+            # result in small 'periCEN' fragments.
+            special_labels.append("periCEN")
+            sub = regions.loc[~regions["name"].isin(special_labels), :]
             if (sub["length"] < _THRESHOLD).any():
                 tiny = sub.loc[sub["length"] < _THRESHOLD, :]
                 print(tiny)
