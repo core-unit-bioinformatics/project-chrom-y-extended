@@ -403,7 +403,10 @@ rule add_gap_fillers_to_annotation:
         def assert_large(regions):
             _THRESHOLD = 100
             regions["length"] = regions["end"] - regions["start"]
-            sub = regions.loc[~regions["name"].isin(["ERRBASE", "UNASSIGNED", "NGAP"]), :]
+            # ERRSTRUCT added here because of NucFlag apparently also
+            # labeling N-gaps as errors (whereas flagger does not);
+            # i.e., this is a decision to achieve consistency
+            sub = regions.loc[~regions["name"].isin(["ERRBASE", "ERRSTRUCT", "UNASSIGNED", "NGAP"]), :]
             if (sub["length"] < _THRESHOLD).any():
                 tiny = sub.loc[sub["length"] < _THRESHOLD, :]
                 print(tiny)
