@@ -364,7 +364,7 @@ rule add_gap_fillers_to_annotation:
         regions = rules.subtract_ngaps.output.gaps_added
     output:
         bed = SUB_WD.joinpath(
-            "results", "seq_annotation",
+            "results", "seq_annotation", "{ref}",
             "{sample}.{ref}.chrY-regions.ngaps.err-struct-base.bed"
         )
     run:
