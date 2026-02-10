@@ -383,6 +383,7 @@ rule add_gap_fillers_to_annotation:
 
         def assert_disjoint(df):
 
+            rows = []
             last_row = None
             for row in df.itertuples():
                 if last_row is None:
@@ -396,9 +397,30 @@ rule add_gap_fillers_to_annotation:
                 overlaps = row.start <= last_row.end
                 conflicts = same_seq and same_name and same_strand and overlaps
                 if conflicts:
-                    raise ValueError(f"Non-disjoint: {row} / {last_row}")
-                last_row = row
-            return
+                    if row.name == "UNASSIGNED":
+                        # it is possible that for a small number samples,
+                        # the last stretches of sequence are labeled with
+                        # UNASSIGNED, so this is the only label where we allow
+                        # a merge this late in the process
+                        mrg_row = (
+                            -99, row._1,
+                            min(last_row.start, row.start),
+                            max(last_row.end, row.end),
+                            500, "+"
+                        )
+                        last_row = mrg_row
+                    else:
+                        raise ValueError(f"Non-disjoint: {row} / {last_row}")
+                else:
+                    rows.append(tuple((last_row[1:])))
+                    last_row = row
+            rows.append(tuple(last_row[1:]))
+            df = pd.DataFrame.from_records(
+                rows,
+                columns=["#seq", "start", "end", "name", "score", "strand"]
+            )
+            df = df.sort_values(["#seq", "start"]).reset_index(drop=True, inplace=False)
+            return df
 
         def assert_large(regions):
             _THRESHOLD = 100
