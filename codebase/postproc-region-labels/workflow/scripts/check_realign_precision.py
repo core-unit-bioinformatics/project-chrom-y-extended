@@ -411,7 +411,7 @@ def main():
 
     align = pd.read_csv(args.input_aln, sep="\t", header=0)
 
-    # 2026-02-06
+    # 2026-02-06 // add heuristics
     # add external knowledge to the process and filter as follows:
     # (1) umbrella (u) or default (n) seq. class labels that have
     # alignments that are fully enclosed by other u or n seq. class
