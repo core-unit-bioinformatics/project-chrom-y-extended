@@ -359,19 +359,35 @@ def discard_enclosed_un_alignments(align, un_labels):
                 dropped = 0
                 frac_a = ovl/a.length
                 frac_b = ovl/b.length
-                if frac_a >= 1:
+                #if frac_a >= 1:  # deactivated for heuristic below
+                if frac_a > 0.999:
                     dropped += 1
                     drop_alignments[a.Name].add(a.pd_idx)
-                if frac_b >= 1:
+                #if frac_b >= 1:  # deactivate for heuristic below
+                if frac_b > 0.999:
                     dropped += 1
                     drop_alignments[b.Name].add(b.pd_idx)
                 if dropped > 1:
                     raise ValueError(f"double dropping: {a} - {b}")
 
-    # in principle not necessary, but maybe there will be
-    # a need for third heuristic on a "per label" basis
+    # Heuristic: check if the above would lead to a u/n label being
+    # removed entirely for this sample, which we do not want.
+    # In this case, retain the single alignment representing the
+    # largest match - heuristic of last resort...
     for label, label_alns in drop_alignments.items():
-        align.drop(label_alns, inplace=True)
+        # check if dropping those alignments would lead to
+        # removing an un label entirely
+        check_drop = align.loc[~align.index.isin(label_alns), align.columns[:10]]
+        if check_drop["query_name"].str.contains(label).any():
+            # label still contained, we can drop those alignments
+            align.drop(label_alns, inplace=True)
+        else:
+            # dropping all those alignments would remove an 'un'
+            # label from the sample, which we do not want
+            # -> keep the alignment w/ most matching bases
+            keep_idx = align.loc[sorted(label_alns), "align_matching"].idxmax()
+            drop_others = label_alns - set([keep_idx])
+            align.drop(drop_others, inplace=True)
 
     align = align.reset_index(drop=True, inplace=False)
 
