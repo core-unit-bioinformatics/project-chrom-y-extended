@@ -449,8 +449,8 @@ rule add_gap_fillers_to_annotation:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
             assert_values(regions)
-            assert_disjoint(regions)
             assert_large(regions)
+            regions = assert_disjoint(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
         else:
             gaps["name"] = "UNASSIGNED"
@@ -462,8 +462,8 @@ rule add_gap_fillers_to_annotation:
             column_sort_order = ["#seq", "start", "end", "name", "score", "strand"]
             regions = regions[column_sort_order]
             assert_values(regions)
-            assert_disjoint(regions)
             assert_large(regions)
+            regions = assert_disjoint(regions)
             regions.to_csv(output.bed, sep="\t", header=True, index=False)
     # END OF RUN BLOCK
 
