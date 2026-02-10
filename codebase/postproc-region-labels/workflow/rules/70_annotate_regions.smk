@@ -384,7 +384,7 @@ rule add_gap_fillers_to_annotation:
 
         def assert_disjoint(df):
 
-            columns = ["seq", "start", "end", "name", "score", "strand"]
+            columns = ["idx", "seq", "start", "end", "name", "score", "strand"]
             MRG_ROW = col.namedtuple("MRG_ROW", columns)
 
             rows = []
@@ -420,7 +420,7 @@ rule add_gap_fillers_to_annotation:
             rows.append(tuple(last_row[1:]))
             df = pd.DataFrame.from_records(
                 rows,
-                columns=["#seq"] + columns[1:]
+                columns=["#seq"] + columns[2:]
             )
             df = df.sort_values(["#seq", "start"]).reset_index(drop=True, inplace=False)
             return df
