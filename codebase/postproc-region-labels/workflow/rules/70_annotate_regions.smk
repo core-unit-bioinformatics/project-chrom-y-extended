@@ -369,6 +369,7 @@ rule add_gap_fillers_to_annotation:
         )
     run:
         import pandas as pd
+        import collections as col
 
         def assert_values(df):
             try:
@@ -383,15 +384,17 @@ rule add_gap_fillers_to_annotation:
 
         def assert_disjoint(df):
 
+            columns = ["seq", "start", "end", "name", "score", "strand"]
+            MRG_ROW = col.namedtuple("MRG_ROW", columns)
+
             rows = []
             last_row = None
+            df.rename({"#seq": "seq"}, axis=1, inplace=True)
             for row in df.itertuples():
                 if last_row is None:
                     last_row = row
                     continue
-                # note: because of table header #seq start end
-                # pandas auto-assigns _1 for #seq
-                same_seq = row._1 == last_row._1
+                same_seq = row.seq == last_row.seq
                 same_name = row.name == last_row.name
                 same_strand = row.strand == last_row.strand
                 overlaps = row.start <= last_row.end
@@ -402,8 +405,8 @@ rule add_gap_fillers_to_annotation:
                         # the last stretches of sequence are labeled with
                         # UNASSIGNED, so this is the only label where we allow
                         # a merge this late in the process
-                        mrg_row = (
-                            -99, row._1,
+                        mrg_row = MRG_ROW(
+                            -99, row.seq,
                             min(last_row.start, row.start),
                             max(last_row.end, row.end),
                             500, "+"
@@ -417,7 +420,7 @@ rule add_gap_fillers_to_annotation:
             rows.append(tuple(last_row[1:]))
             df = pd.DataFrame.from_records(
                 rows,
-                columns=["#seq", "start", "end", "name", "score", "strand"]
+                columns=["#seq"] + columns[1:]
             )
             df = df.sort_values(["#seq", "start"]).reset_index(drop=True, inplace=False)
             return df
