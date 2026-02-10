@@ -1,5 +1,38 @@
 
+import pathlib
+
 SUB_WD = WD.joinpath("80-statistics")
+
+
+localrules: compare_to_previous
+rule compare_to_previous:
+    """This exists essentially for debugging
+    """
+    input:
+        prev_labels = pathlib.Path(
+            "/gpfs/project/projects/medbioinf/data/00_RESTRUCTURE/shares/globus/outgoing/hgsvc/sig_chry/v2/verkko-v2.2.1/annotations/seq_classes/2026-01_final",
+            "{ref}", "{sample}.{ref}.chrY-regions.ngaps.err-struct-base.bed"
+        ),
+        curr_labels = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        diff = SUB_WD.joinpath(
+            "suppl", "diff_prev_curr",
+            "{ref}", "{sample}.{ref}.delta.txt"
+        )
+    shell:
+        "diff --suppress-common-lines {input.prev_labels} {input.curr_labels} > {output.diff}"
+
+
+rule run_all_diff_previous:
+    input:
+        txt = expand(
+            rules.compare_to_previous.output.diff,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
+
+
+### BELOW: actual statistics for manuscript
 
 
 localrules: compute_label_dist_stats
