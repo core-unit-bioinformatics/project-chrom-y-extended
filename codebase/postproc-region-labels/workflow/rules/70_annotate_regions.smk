@@ -409,7 +409,7 @@ rule add_gap_fillers_to_annotation:
                             -99, row.seq,
                             min(last_row.start, row.start),
                             max(last_row.end, row.end),
-                            500, "+"
+                            "UNASSIGNED", 500, "+"
                         )
                         last_row = mrg_row
                     else:
