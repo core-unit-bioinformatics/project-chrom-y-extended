@@ -7,6 +7,10 @@ SUB_WD = WD.joinpath("80-statistics")
 localrules: compare_to_previous
 rule compare_to_previous:
     """This exists essentially for debugging
+
+    The || true at the end is necessary because non-empty diffs
+    yield an exit of 1, which will be turned into a failed rule
+    by Snakemake
     """
     input:
         prev_labels = pathlib.Path(
@@ -20,7 +24,7 @@ rule compare_to_previous:
             "{ref}", "{sample}.{ref}.delta.txt"
         )
     shell:
-        "diff --suppress-common-lines {input.prev_labels} {input.curr_labels} > {output.diff}"
+        "diff --suppress-common-lines {input.prev_labels} {input.curr_labels} > {output.diff} || true"
 
 
 rule run_all_diff_previous:
