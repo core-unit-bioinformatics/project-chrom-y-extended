@@ -232,7 +232,7 @@ rule intersect_final_regions_with_draft:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "bedtools intersect -wo -a {input.final} -b {input.draft} > {output.isect}"
+        "bedtools intersect -wo -a {input.draft} -b {input.final} > {output.isect}"
 
 
 localrules: aggregate_final_draft_overlap_table
