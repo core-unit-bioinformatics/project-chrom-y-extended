@@ -214,9 +214,108 @@ rule merge_self_overlap_stats:
     # END OF RUN BLOCK
 
 
+# for convenience only
+# intersect the final regions with the early variant
+# after adding error annotations to check which region
+# type exhibits most errors and N gaps
+
+rule intersect_final_regions_with_draft:
+    input:
+        draft = rules.add_kmer_blocks.output.bed,
+        final = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        isect = SUB_WD.joinpath(
+            "suppl", "isect_final_draft", "{sample}.{ref}.final-draft-isect.tsv"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bedtools intersect -wo -a {input.final} -b {input.draft} > {output.isect}"
+
+
+localrules: aggregate_final_draft_overlap_table
+rule aggregate_final_draft_overlap_table:
+    input:
+        tsv = rules.intersect_final_regions_with_draft.output.isect
+    output:
+        tsv = SUB_WD.joinpath(
+            "suppl", "isect_final_draft", "{sample}.{ref}.agg-final-draft-isect.tsv"
+        )
+    run:
+        import pandas as pd
+
+        plain_header = ["seq", "start", "end", "name", "score", "strand"]
+        header1 = [f"{hd}1" for hd in plain_header]
+        header2 = [f"{hd}2" for hd in plain_header]
+        header = header1 + header2 + ["overlap_bp"]
+
+        df = pd.read_csv(input.tsv, sep="\t", header=None, names=header)
+        # drop self-overlap
+        df = df.loc[df["name1"] != df["name2"], :].copy()
+
+        grouping = header1 + ["name2"]
+
+        agg = df.groupby(grouping)["overlap_bp"].sum()
+        agg = agg.reset_index(drop=False, inplace=False)
+        agg["length"] = agg["end1"] - agg["start1"]
+        agg["overlap_pct"] = (agg["overlap_bp"] / agg["length"] * 100).round(3)
+
+        reheader = [c.strip("1") for c in agg.columns]
+        agg.columns = reheader
+
+        agg.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+localrules: merge_final_draft_overlap_stats
+rule merge_final_draft_overlap_stats:
+    input:
+        ovl_stats = expand(
+            rules.aggregate_final_draft_overlap_table.output.tsv,
+            sample=SAMPLES,
+            allow_missing=True
+        )
+    output:
+        tsv = SUB_WD.joinpath(
+            "results", "ref_merged_final_draft_ovl",
+            "{ref}.final-draft-ovl-stats.tsv"
+        )
+    run:
+        import pathlib as pl
+        import pandas as pd
+
+        def set_seq_type(seq_name):
+            if seq_name.endswith("_chrY"):
+                return "main"
+            else:
+                assert "random" in seq_name
+                return "rand"
+
+        merged = []
+        for table_file in input.ovl_stats:
+            sample = pl.Path(table_file).name.split(".")[0]
+            df = pd.read_csv(table_file, sep="\t", header=0)
+            df["sample"] = sample
+            df["seq_type"] = df["seq"].apply(set_seq_type)
+            merged.append(df)
+
+        merged = pd.concat(merged, axis=0, ignore_index=False)
+        merged.sort_values(["sample", "seq", "start"], inplace=True)
+        merged.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
+
 rule run_all_self_overlaps:
     input:
-        tsv = expand(
+        tsv_self = expand(
             rules.merge_self_overlap_stats.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
+        ),
+        tsv_draft = expand(
+            rules.merge_final_draft_overlap_stats.output.tsv,
+            ref=list(MODULE_REF_GENOMES.keys())
         )
+

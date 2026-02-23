@@ -74,8 +74,8 @@ rule create_gap_track:
         "bedtools complement -i {input.regions} -g {input.sizes} > {output}"
 
 
-localrules: merge_gaps_into_seqclass_labels
-rule merge_gaps_into_seqclass_labels:
+localrules: merge_unassigned_into_seqclass_labels
+rule merge_unassigned_into_seqclass_labels:
     input:
         labels = rules.merge_centromere_into_seqclasses.output.bed,
         gaps = rules.create_gap_track.output.bed
@@ -116,7 +116,7 @@ rule merge_gaps_into_seqclass_labels:
 rule intersect_labels_and_qc:
     input:
         qc_win = rules.merge_qc_track_intersections.output.tsv,
-        labels = rules.merge_gaps_into_seqclass_labels.output.tsv
+        labels = rules.merge_unassigned_into_seqclass_labels.output.tsv
     output:
         isect = SUB_WD.joinpath("suppl", "label_qc_isect", "{sample}.{ref}.chrY-regions.qc-win.isect.tsv")
     conda:
@@ -132,7 +132,7 @@ rule set_error_windows:
     input:
         isect = rules.intersect_labels_and_qc.output.isect,
         qc_header = rules.merge_qc_track_intersections.output.header,
-        seqclass_header = rules.merge_gaps_into_seqclass_labels.output.header,
+        seqclass_header = rules.merge_unassigned_into_seqclass_labels.output.header,
     output:
         tsv = SUB_WD.joinpath("suppl", "add_err_windows", "{sample}.{ref}.chrY-regions.qc-win.err-struct-basewin.tsv")
     run:
