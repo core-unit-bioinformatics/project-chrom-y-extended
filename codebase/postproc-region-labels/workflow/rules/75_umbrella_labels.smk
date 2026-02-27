@@ -32,5 +32,5 @@ rule determine_umbrella_label_matchings:
         ).resolve(strict=True)
     shell:
         "{params.script} --ref-regions {input.ref_labels} --sample-regions {input.smp_labels} "
-        "--ref-name {wildcards.ref} --output {output.rename_smp}"
+        "--ref-out {output.rename_ref} --output {output.rename_smp}"
 
