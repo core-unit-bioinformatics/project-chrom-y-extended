@@ -307,7 +307,6 @@ rule merge_final_draft_overlap_stats:
     # END OF RUN BLOCK
 
 
-
 rule run_all_self_overlaps:
     input:
         tsv_self = expand(
@@ -317,5 +316,10 @@ rule run_all_self_overlaps:
         tsv_draft = expand(
             rules.merge_final_draft_overlap_stats.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
+        ),
+        renamer = expand(
+            rules.determine_umbrella_label_matchings.output.rename_smp,
+            ref=list(MODULE_REF_GENOMES.keys()),
+            sample=SAMPLES
         )
 
