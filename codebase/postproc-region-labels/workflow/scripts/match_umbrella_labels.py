@@ -32,10 +32,10 @@ def parse_command_line():
         required=True,
     )
     parser.add_argument(
-        "-n", "--ref-name",
-        type=str,
+        "-n", "--ref-out",
+        type=lambda fp: pl.Path(fp).resolve(),
         required=True,
-        dest="ref_name"
+        dest="ref_out"
     )
     parser.add_argument(
         "-o", "--output",
@@ -243,7 +243,7 @@ def find_matching_reference_label(sample_regions, ref_labels, match_non_umbrella
     return sample_regions
 
 
-def write_ref_renamer(output_path, ref_name, ref_labels):
+def write_ref_renamer(output_path, ref_labels):
 
     # row.name, row.seqclass, row.unified_label, row.prefix_group, f"{row.seqclass}{enum_suffix}"
     renamer = dict()
@@ -255,10 +255,9 @@ def write_ref_renamer(output_path, ref_name, ref_labels):
             "group": group
         }
     output_path.parent.mkdir(exist_ok=True, parents=True)
-    out_json = output_path.parent.joinpath(f"{ref_name}.unified-umbrella.json")
-    if out_json.is_file():
+    if output_path.is_file():
         return None
-    with open(out_json, "w") as dump:
+    with open(output_path, "w") as dump:
         json.dump(renamer, dump, indent=2, ensure_ascii=True)
     return None
 
@@ -291,7 +290,7 @@ def main():
 
     sample_regions.to_csv(args.output, header=True, index=False, sep="\t")
 
-    write_ref_renamer(args.output, args.ref_name, ref_labels)
+    write_ref_renamer(args.ref_out, ref_labels)
     write_sample_renamer(args.output, sample_regions)
 
     return 0

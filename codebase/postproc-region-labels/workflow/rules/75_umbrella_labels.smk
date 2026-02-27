@@ -19,7 +19,7 @@ rule determine_umbrella_label_matchings:
     output:
         rename_ref = SUB_WD.joinpath(
             "results", "unified_umbrella",
-            "{ref}.unified-umbrella.json"
+            "{ref}", "{ref}.{sample}.unified-umbrella.json"
         ),
         rename_smp = SUB_WD.joinpath(
             "results", "unified_umbrella",
