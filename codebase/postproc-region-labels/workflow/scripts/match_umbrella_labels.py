@@ -217,8 +217,6 @@ def find_matching_reference_label(sample_regions, ref_labels, match_non_umbrella
         is_motif_label = check_label in motif_labels
 
         if is_non_umbrella or is_issue_label or is_motif_label:
-            if is_non_umbrella:
-                print("skipping ", check_label)
             matched_labels.append("non-umbrella")
             unified_labels.append("non-umbrella")
             matched_prefixes.append("non-umbrella")
@@ -228,7 +226,6 @@ def find_matching_reference_label(sample_regions, ref_labels, match_non_umbrella
         except KeyError:
             matchings = find_complex_match(check_label, ref_labels)
             if matchings is None:
-                print("no match ", check_label)
                 matched_labels.append("non-umbrella")
                 unified_labels.append("non-umbrella")
                 matched_prefixes.append("non-umbrella")
