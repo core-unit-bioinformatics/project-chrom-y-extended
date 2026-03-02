@@ -55,7 +55,11 @@ def find_previous(regions, seq, start_idx):
     select_umbrella = regions["is_umbrella"]
     select_seq = regions["seq2"] == seq
     selector = select_index & select_umbrella & select_seq
-    return regions.loc[selector, :].iloc[-1]
+    try:
+        previous_umbrella = regions.loc[selector, :].iloc[-1]
+    except IndexError:
+        previous_umbrella = None
+    return previous_umbrella
 
 
 def find_next(regions, seq, start_idx):
@@ -124,22 +128,27 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
             print("next")
             print(next_umbrella)
             print(next_ovl)
+        next_exists = next_umbrella is not None
+        prev_exists = previous_umbrella is not None
+        both_exist = next_exists and prev_exists
 
-        if next_umbrella is not None and (previous_umbrella.final_label == next_umbrella.final_label):
+        if both_exist and (previous_umbrella.final_label == next_umbrella.final_label):
             # assign-enclosed
             assign = previous_umbrella.final_label
             assign_rule = "enclosed"
         elif prev_ovl == 0 and next_ovl < 0:
             # assign-prev
+            assert prev_exists
             assign = previous_umbrella.final_label
             assign_rule = "touchleft"
         elif prev_ovl < 0 and next_ovl == 0:
             # assign-next
-            assert next_umbrella is not None
+            assert next_exists
             assign = next_umbrella.final_label
             assign_rule = "touchright"
         elif prev_ovl == 0 and next_ovl == 0:
             # assign-left rule
+            assert prev_exists
             assign = previous_umbrella.final_label
             assign_rule = "assignleft"
         else:
