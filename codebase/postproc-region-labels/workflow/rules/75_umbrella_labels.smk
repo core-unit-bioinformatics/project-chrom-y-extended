@@ -1,7 +1,7 @@
 
 import pathlib
 
-SUB_WD = WD.joinpath("80-statistics")
+SUB_WD = WD.joinpath("75-umbrella-labels")
 
 localrules: determine_umbrella_label_matchings
 rule determine_umbrella_label_matchings:
