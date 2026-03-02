@@ -235,6 +235,53 @@ rule intersect_final_regions_with_draft:
         "bedtools intersect -wo -a {input.draft} -b {input.final} > {output.isect}"
 
 
+localrules: compute_assign_umbrella_errors
+rule compute_assign_umbrella_errors:
+    input:
+        isect = rules.intersect_final_regions_with_draft.output.isect,
+        json = rules.determine_umbrella_label_matchings.output.rename_smp
+    output:
+        tsv = SUB_WD.joinpath(
+            "suppl", "umbrella_errors", "{sample}.{ref}.umbrella-errors.tsv"
+        )
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "match_umbrella_labels.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --intersect {input.isect} --umbrella-labels {input.json} --output {output.tsv}"
+
+
+localrules: aggregate_umbrella_errors
+rule aggregate_umbrella_errors:
+    input:
+        tsv = expand(
+            rules.compute_assign_umbrella_errors.output.tsv,
+            sample=SAMPLES,
+            allow_missing=True
+        )
+    output:
+        tsv = SUB_WD.joinpath(
+            "results", "umbrella_errors", "{ref}.umbrella-errors.tsv"
+        )
+    run:
+        import pathlib as pl
+        import pandas as pd
+
+        concat = []
+        for table in input.tsv:
+            sample = pl.Path(table).name.split(".")[0]
+            assert sample in SAMPLES
+            df = pd.read_csv(table, sep="\t", header=0)
+            df["sample"] = sample
+            concat.append(df)
+        concat = pd.concat(concat, axis=0, ignore_index=False)
+        concat.sort_values(["sample", "seq", "start"], inplace=True)
+        concat.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 localrules: aggregate_final_draft_overlap_table
 rule aggregate_final_draft_overlap_table:
     input:
@@ -317,9 +364,7 @@ rule run_all_self_overlaps:
             rules.merge_final_draft_overlap_stats.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
-        renamer = expand(
-            rules.determine_umbrella_label_matchings.output.rename_smp,
-            ref=list(MODULE_REF_GENOMES.keys()),
-            sample=SAMPLES
+        tsv_umbrella = expand(
+            rules.aggregate_umbrella_errors.output.tsv,
+            ref=list(MODULE_REF_GENOMES.keys())
         )
-
