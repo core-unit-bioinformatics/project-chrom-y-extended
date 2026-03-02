@@ -247,7 +247,7 @@ rule compute_assign_umbrella_errors:
     params:
         script=PROJECT_REPO_ROOT.joinpath(
             "codebase", "postproc-region-labels", "workflow",
-            "scripts", "match_umbrella_labels.py"
+            "scripts", "assign_umbrella_errors.py"
         ).resolve(strict=True)
     shell:
         "{params.script} --intersect {input.isect} --umbrella-labels {input.json} --output {output.tsv}"
