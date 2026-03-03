@@ -98,6 +98,7 @@ def extract_issue_information(overlaps, self=None):
 
 def assign_label(regions, umbrellas, overlaps, issue_name):
 
+    label_group = None
     if DEBUG:
         print(overlaps)
     if issue_name == "UNASSIGNED":
@@ -177,17 +178,28 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
             else:
                 assign_rule = "assignright"
         else:
-            raise RuntimeError(f"Neither prev nor next umbrella exist: {overlaps}")
+            # this can indeed happen on 'random' sequence bits;
+            # this cannot be resolved here, so need to introduce special
+            # values --- annoying
+            assign = issue_name
+            label_group = "FRAG"
+            assign_rule = "none"
+
+            # raise RuntimeError(f"Neither prev nor next umbrella exist: {overlaps}")
     else:
         sub.sort_values("overlap_bp", ascending=True, inplace=True)
         assign = sub["draft_label"].iloc[0]
         assign_rule = "overlap"
-    label_group = umbrellas[assign]["group"]
+    if assign == issue_name:
+        assert label_group is not None
+    else:
+        label_group = umbrellas[assign]["group"]
+        assert assign in umbrellas
     if DEBUG:
         print(assign)
         print(label_group)
         print(assign_rule)
-    assert assign in umbrellas
+
     return assign, label_group, assign_rule
 
 
