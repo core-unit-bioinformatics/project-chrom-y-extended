@@ -106,7 +106,7 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
     elif issue_name == "NGAP":
         sub = overlaps.loc[~overlaps["draft_label"].isin(ISSUE_LABELS), :].copy()
     else:
-        raise
+        raise ValueError(f"Unexpected issue name: {issue_name}")
     if sub.empty:
         min_index = overlaps.index.min()
         max_index = overlaps.index.max()
@@ -117,7 +117,7 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
         prev_ovl = check_overlap(start, end, previous_umbrella)
 
         if DEBUG:
-            print("prev")
+            print("<<< prev")
             print(previous_umbrella)
             print(prev_ovl)
 
@@ -125,34 +125,55 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
         next_ovl = check_overlap(start, end, next_umbrella)
 
         if DEBUG:
-            print("next")
+            print(">>> next")
             print(next_umbrella)
             print(next_ovl)
         next_exists = next_umbrella is not None
         prev_exists = previous_umbrella is not None
         both_exist = next_exists and prev_exists
 
-        if both_exist and (previous_umbrella.final_label == next_umbrella.final_label):
-            # assign-enclosed
-            assign = previous_umbrella.final_label
-            assign_rule = "enclosed"
-        elif prev_ovl == 0 and next_ovl < 0:
-            # assign-prev
+        if both_exist:
+            # next two just for the code-checker...
             assert prev_exists
-            assign = previous_umbrella.final_label
-            assign_rule = "touchleft"
-        elif prev_ovl < 0 and next_ovl == 0:
-            # assign-next
             assert next_exists
-            assign = next_umbrella.final_label
-            assign_rule = "touchright"
-        elif prev_ovl == 0 and next_ovl == 0:
-            # assign-left rule
-            assert prev_exists
+            if previous_umbrella.final_label == next_umbrella.final_label:
+                # assign-enclosed
+                assign = previous_umbrella.final_label
+                assign_rule = "enclosed"
+            elif prev_ovl == 0 and next_ovl < 0:
+                # assign-prev
+                assert prev_exists
+                assign = previous_umbrella.final_label
+                assign_rule = "touchleft"
+            elif prev_ovl < 0 and next_ovl == 0:
+                # assign-next
+                assert next_exists
+                assign = next_umbrella.final_label
+                assign_rule = "touchright"
+            elif prev_ovl == 0 and next_ovl == 0:
+                # assign-left rule for breaking ties
+                assert prev_exists
+                assign = previous_umbrella.final_label
+                assign_rule = "assignleft"
+            else:
+                raise RuntimeError(
+                    f"Cannot decide assignment between prev and next: "
+                    "{previous_umbrella} / {next_umbrella}"
+                )
+        elif prev_exists:  # and not next
             assign = previous_umbrella.final_label
-            assign_rule = "assignleft"
+            if prev_ovl == 0:
+                assign_rule = "touchleft"
+            else:
+                assign_rule = "assignleft"
+        elif next_exists:  # and not prev
+            assign = next_umbrella.final_label
+            if next_ovl == 0:
+                assign_rule = "touchright"
+            else:
+                assign_rule = "assignright"
         else:
-            raise
+            raise RuntimeError(f"Neither prev nor next umbrella exist: {overlaps}")
     else:
         sub.sort_values("overlap_bp", ascending=True, inplace=True)
         assign = sub["draft_label"].iloc[0]
@@ -201,10 +222,14 @@ def main():
         region_infos = dict(
             (h, v) for h, v in zip(BED_HEADER, list(region))
         )
-        start_match = True  # region_infos["start"] == 18475829
-        end_match = True  # region_infos["end"] == 18483329
-        name_match = False  # region_infos["name"] == "PAR1"
+        # 539102  540911  UNASSIGNED
+        start_match = True  # region_infos["start"] == 539102
+        end_match = True  # region_infos["end"] == 540911
+        name_match = False  # region_infos["name"] == "UNASSIGNED"
+        global DEBUG
         DEBUG = start_match & end_match & name_match
+        if DEBUG:
+            print(region_infos)
         if region_infos["name"] in ["ERRBASE", "ERRSTRUCT"]:
             label_group = "ERROR"
             region_infos["label_group"] = label_group
