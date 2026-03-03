@@ -155,7 +155,11 @@ def assign_label(regions, umbrellas, overlaps, issue_name):
                 assert prev_exists
                 assign = previous_umbrella.final_label
                 assign_rule = "assignleft"
+            elif prev_ovl < 0 and next_ovl < 0:
+                assign = previous_umbrella.final_label
+                assign_rule = "assignleft"
             else:
+                # this cannot happen...
                 raise RuntimeError(
                     f"Cannot decide assignment between prev and next: "
                     "{previous_umbrella} / {next_umbrella}"
