@@ -34,3 +34,40 @@ rule determine_umbrella_label_matchings:
         "{params.script} --ref-regions {input.ref_labels} --sample-regions {input.smp_labels} "
         "--ref-out {output.rename_ref} --output {output.rename_smp}"
 
+
+localrules: simplify_umbrella_region_labels
+rule simplify_umbrella_region_labels:
+    input:
+        rename_smp = rules.determine_umbrella_label_matchings.output.rename_smp,
+        labels = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        disjoined = SUB_WD.joinpath(
+            "results", "seq_annotation", "{ref}",
+            "{sample}.{ref}.chrY-umbrella.ngaps.err-struct-base.disjoined.bed"
+        ),
+        stitched = SUB_WD.joinpath(
+            "results", "seq_annotation", "{ref}",
+            "{sample}.{ref}.chrY-umbrella.ngaps.err-struct-base.stitched.bed"
+        ),
+    params:
+        script = PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "simplify_umbrella_labels.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} --region-labels {input.labels} --umbrella-labels {input.rename_smp} "
+        "--disjoined {output.disjoined} --stitched {output.stitched}"
+
+
+rule run_all_umbrella_computations:
+    input:
+        renamer = expand(
+            rules.determine_umbrella_label_matchings.output,
+            ref=list(MODULE_REF_GENOMES.keys()),
+            sample=SAMPLES
+        ),
+        merged = expand(
+            rules.simplify_umbrella_region_labels.output,
+            ref=list(MODULE_REF_GENOMES.keys()),
+            sample=SAMPLES
+        )
