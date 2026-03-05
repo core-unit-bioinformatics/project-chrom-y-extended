@@ -184,7 +184,8 @@ def disjoin_regions(regions, umbrellas):
     active = col.deque()
     # buffer overlapping regions
     buffer = col.deque()
-    last_is_issue = False
+    last_issue = -1
+    row_n = -1
     total_rows = regions.shape[0]
     total_enclosed = 0
     for row_n, region in enumerate(regions.itertuples(index=False), start=1):
@@ -193,8 +194,7 @@ def disjoin_regions(regions, umbrellas):
         if region.name in ISSUE_LABELS:
             rd["group"] = "ISSUE"
             final.append(rd)
-            if row_n == regions.shape[0]:
-                last_is_issue = True
+            last_issue = row_n
             continue
         label_infos = umbrellas[rd["name"]]
         rd["group"] = label_infos["group"]
@@ -229,7 +229,7 @@ def disjoin_regions(regions, umbrellas):
                     final.append(r1)
                     adj_regions.appendleft(r2)
 
-    if len(active) == 1 and last_is_issue:
+    if len(active) == 1 and row_n == (last_issue + 1):
         final.append(active.pop())
     elif len(active) == 0:
         pass
