@@ -197,46 +197,55 @@ def disjoin_regions(regions, umbrellas):
     row_n = -1
     total_rows = regions.shape[0]
     total_enclosed = 0
-    for row_n, region in enumerate(regions.itertuples(index=False), start=1):
-        rd = to_dict(region)
-        rd["disjoined"] = False
-        if region.name in ISSUE_LABELS:
-            rd["group"] = "ISSUE"
-            final.append(rd)
-            last_issue = row_n
-            continue
-        label_infos = umbrellas[rd["name"]]
-        rd["group"] = label_infos["group"]
-        if rd["name"] != "TELO":
-            if "," in label_infos["unified"]:
-                rd["name"] = label_infos["group"]
-
-        while 1:
-            try:
-                other = active.popleft()
-                if overlap(rd, other) > 0:
-                    buffer.append(other)
-                else:
-                    final.append(other)
-            except IndexError:
-                # active is empty now
-                buffer.append(rd)
-                break
-        if len(buffer) > 0:
-            adj_regions, enclosed = adjust_buffered_regions(buffer)
-            total_enclosed += enclosed
+    regions_per_seq = regions.agg("seq").value_counts().to_dict()
+    print(regions_per_seq)
+    for seq, seq_regions in regions.groupby("seq"):
+        for row_n, region in enumerate(seq_regions.itertuples(index=False), start=1):
+            rd = to_dict(region)
+            rd["disjoined"] = False
+            if region.name in ISSUE_LABELS:
+                rd["group"] = "ISSUE"
+                final.append(rd)
+                last_issue = row_n
+                continue
+            label_infos = umbrellas[rd["name"]]
+            rd["group"] = label_infos["group"]
+            if rd["name"] != "TELO":
+                if "," in label_infos["unified"]:
+                    rd["name"] = label_infos["group"]
+            print("region ", rd)
             while 1:
-                r1 = adj_regions.popleft()
-                r2 = adj_regions.popleft()
-                if r2 is None:
-                    # implies that r1 is 'region' above
-                    assert len(active) == 0
-                    active.append(r1)
-                    buffer = col.deque()
+                try:
+                    other = active.popleft()
+                    print("other ", other)
+                    if overlap(rd, other) > 0:
+                        buffer.append(other)
+                    else:
+                        final.append(other)
+                except IndexError:
+                    # active is empty now
+                    buffer.append(rd)
                     break
-                else:
-                    final.append(r1)
-                    adj_regions.appendleft(r2)
+            if len(buffer) > 0:
+                adj_regions, enclosed = adjust_buffered_regions(buffer)
+                total_enclosed += enclosed
+                while 1:
+                    r1 = adj_regions.popleft()
+                    r2 = adj_regions.popleft()
+                    if r2 is None:
+                        # implies that r1 is 'region' above
+                        assert len(active) == 0
+                        if row_n == regions_per_seq[seq]:
+                            # last region of this seq does not need
+                            # to go back into the cycle
+                            final.append(r1)
+                        else:
+                            active.append(r1)
+                        buffer = col.deque()
+                        break
+                    else:
+                        final.append(r1)
+                        adj_regions.appendleft(r2)
     if len(active) == 1 and row_n in [last_issue + 1, last_issue]:
         final.append(active.pop())
     elif len(active) == 0:
