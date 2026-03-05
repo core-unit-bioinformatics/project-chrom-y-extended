@@ -96,7 +96,16 @@ def idname(r1, r2):
 
 
 def is_enclosed(r1, r2):
-    return r1["start"] >= r2["start"] and r1["end"] <= r2["end"] and r1["group"] == r2["group"]
+    r1_len = r1["end"] - r1["start"]
+    r2_len = r2["end"] - r2["start"]
+    len_ratio = r1_len / r2_len
+    start_beyond = r2["start"] <= r1["start"]
+    end_before = r1["end"] <= r2["end"]
+    group_match = r1["group"] == r2["group"]
+    mismap = len_ratio < 0.05
+    group_enclosed = start_beyond & end_before & group_match
+    mismap_enclosed = start_beyond & end_before & mismap
+    return group_enclosed or mismap_enclosed
 
 
 def adjust_buffered_regions(buffer):
@@ -228,13 +237,12 @@ def disjoin_regions(regions, umbrellas):
                 else:
                     final.append(r1)
                     adj_regions.appendleft(r2)
-
-    if len(active) == 1 and row_n == (last_issue + 1):
+    if len(active) == 1 and row_n in [last_issue + 1, last_issue]:
         final.append(active.pop())
     elif len(active) == 0:
         pass
     else:
-        raise RuntimeError(f"active not empty: {active.pop()}")
+        raise RuntimeError(f"active not empty: {active.pop()} / {row_n}")
     assert len(buffer) == 0
 
     assert len(final) == (total_rows - total_enclosed)
