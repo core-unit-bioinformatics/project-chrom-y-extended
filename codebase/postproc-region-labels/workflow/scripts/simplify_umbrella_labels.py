@@ -198,7 +198,6 @@ def disjoin_regions(regions, umbrellas):
     total_rows = regions.shape[0]
     total_enclosed = 0
     regions_per_seq = regions.agg("seq").value_counts().to_dict()
-    print(regions_per_seq)
     for seq, seq_regions in regions.groupby("seq"):
         for row_n, region in enumerate(seq_regions.itertuples(index=False), start=1):
             rd = to_dict(region)
@@ -213,7 +212,6 @@ def disjoin_regions(regions, umbrellas):
             if rd["name"] != "TELO":
                 if "," in label_infos["unified"]:
                     rd["name"] = label_infos["group"]
-            print("region ", rd)
             while 1:
                 try:
                     other = active.popleft()
