@@ -1,5 +1,15 @@
 # Project: Chromosome Y extended
 
+## Relevant notebooks for manuscript content
+
+```
+# panel main fig. 1
+codebase/plotting/notebooks/region-overlap-stats/issue-by-group.ipynb
+
+# supp. figures
+codebase/plotting/notebooks/region-overlap-stats/region-errors.ipynb
+```
+
 ## Reference sequences - notes
 
 ### T2Tv2 / chm13 + HG002-Y
