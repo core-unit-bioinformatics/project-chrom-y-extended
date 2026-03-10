@@ -3,6 +3,7 @@
       "project_repo": "/home/ebertp/work/code/cubi/project-chrom-y-extended",
       "local_hilbert_prefix": "/home/ebertp/mounts/hilbert/project",
       "plot_root": "/home/ebertp/work/cloud/sciebo/share/outgoing/projects/project-chrom-y-extended/plots",
+      "table_root": "/home/ebertp/work/cloud/sciebo/share/outgoing/projects/project-chrom-y-extended/tables",
       "project_data": "/home/ebertp/work/projects/chrom-y-extended"
     },
     "GENERIC": {
