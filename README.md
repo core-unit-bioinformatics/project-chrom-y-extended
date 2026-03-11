@@ -6,8 +6,14 @@
 # panel main fig. 1
 codebase/plotting/notebooks/region-overlap-stats/issue-by-group.ipynb
 
+codebase/plotting/notebooks/seqclass_stats/y-seqclass-boxplot.ipynb
+
 # supp. figures
 codebase/plotting/notebooks/region-overlap-stats/region-errors.ipynb
+
+# numbers
+## error rates
+codebase/postproc-region-labels/notebooks/tabulate-error-rate.ipynb
 ```
 
 ## Reference sequences - notes
