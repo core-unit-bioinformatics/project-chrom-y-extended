@@ -526,7 +526,7 @@ rule disintegrate_qc_annotations:
 localrules: reheader_disintegrated_qc_annotation
 rule reheader_disintegrated_qc_annotation:
     input:
-        qc_labels = rules.merge_qc_track_intersections.output.tsv,
+        qc_header = rules.merge_qc_track_intersections.output.header,
         annot = rules.add_gap_fillers_to_annotation.output.bed,
         isect = rules.disintegrate_qc_annotations.output.tsv
     output:
@@ -534,7 +534,7 @@ rule reheader_disintegrated_qc_annotation:
     run:
         import pandas as pd
         header_annot = open(input.annot).readline().strip().strip("#").split()
-        header_qc_labels = open(input.qc_labels).readline().strip().strip("#").split()
+        header_qc_labels = open(input.qc_header).readline().strip().strip("#").split()
 
         out_header = header_annot + header_qc_labels + ["overlap_bp"]
         assert len(set(out_header)) == len(out_header)
