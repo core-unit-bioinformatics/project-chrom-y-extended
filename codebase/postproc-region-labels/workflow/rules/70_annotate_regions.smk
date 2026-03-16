@@ -506,6 +506,44 @@ rule check_all_bases_covered:
     # END OF RUN BLOCK
 
 
+# special request... 'disintegrate' again and show explicitly
+# where NucFlag and Flagger flagged regions (and not both)
+rule disintegrate_qc_annotations:
+    input:
+        check = rules.check_all_bases_covered.output.check,
+        qc_labels = rules.merge_qc_track_intersections.output.tsv,
+        annot = rules.add_gap_fillers_to_annotation.output.bed
+    output:
+        tsv = SUB_WD.joinpath("suppl", "disintegrate_qc_labels", "{sample}.{ref}.chrY-regions-split-errors.tsv")
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bedtools intersect -wao -a {input.annot} -b {input.qc_labels} > {output.tsv}"
+
+
+localrules: reheader_disintegrated_qc_annotation
+rule reheader_disintegrated_qc_annotation:
+    input:
+        qc_labels = rules.merge_qc_track_intersections.output.tsv,
+        annot = rules.add_gap_fillers_to_annotation.output.bed,
+        isect = rules.disintegrate_qc_annotations.output.tsv
+    output:
+        tsv = SUB_WD.joinpath("suppl", "disintegrate_reheadered", "{sample}.{ref}.chrY-regions-split-errors.rhd.tsv")
+    run:
+        import pandas as pd
+        header_annot = open(input.annot).readline().strip().strip("#").split()
+        header_qc_labels = open(input.qc_labels).readline().strip().strip("#").split()
+
+        out_header = header_annot + header_qc_labels + ["overlap_bp"]
+        assert len(set(out_header)) == len(out_header)
+        df = pd.read_csv(input.isect, sep="\t", header=None, names=out_header)
+        df.sort_values(["seq", "start", "win_start"], inplace=True)
+        df.to_csv(output.tsv, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_annotate_regions:
     input:
         check = expand(
@@ -513,3 +551,8 @@ rule run_all_annotate_regions:
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
+        split_isect = expand(
+            rules.reheader_disintegrated_qc_annotation.output.tsv,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
