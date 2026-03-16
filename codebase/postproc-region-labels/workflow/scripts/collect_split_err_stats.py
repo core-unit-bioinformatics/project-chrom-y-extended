@@ -8,7 +8,7 @@ import pathlib as pl
 import pandas as pd
 
 
-DEBUG = True
+DEBUG = False
 
 DBG_ISECT_TABLE = pl.Path("/home/ebertp/work/projects/chrom-y-extended/wf-data/region-labels/split_qc/NA19043.t2tv2.chrY-regions-split-errors.rhd.tsv")
 DBG_UMBRELLA_MAP = pl.Path("/home/ebertp/work/projects/chrom-y-extended/wf-data/region-labels/umbrellas/t2tv2/NA19043.t2tv2.chrY-unified-umbrella.json")
