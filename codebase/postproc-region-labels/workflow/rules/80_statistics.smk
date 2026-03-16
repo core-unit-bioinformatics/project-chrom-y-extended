@@ -354,6 +354,48 @@ rule merge_final_draft_overlap_stats:
     # END OF RUN BLOCK
 
 
+# by request only
+# disintegrate error annotation again and compute statistics split by
+# tool (and joint)
+localrules: aggregate_split_errors_by_umbrella
+rule aggregate_split_errors_by_umbrella:
+    input:
+        umbrella = rules.determine_umbrella_label_matchings.output.rename_smp,
+        isect_table = rules.reheader_disintegrated_qc_annotation.output.tsv
+    output:
+        tsv = SUB_WD.joinpath("suppl", "split_err_umbrella", "{sample}.{ref}.split-err-umbrella-agg.tsv")
+    params:
+        scripts=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "collect_split_err_stats.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.scripts} -u {input.umbrella} -i {input.isect_table} -o {output.tsv}"
+
+
+localrules: merge_agg_split_errors_by_umbrella
+rule merge_agg_split_errors_by_umbrella:
+    input:
+        tables = expand(
+            rules.aggregate_split_errors_by_umbrella.output.tsv,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
+    output:
+        table = SUB_WD.joinpath("results", "split_err_umbrella", "struct-err_umbrella.tsv")
+    run:
+        import pandas as pd
+
+        concat = []
+        for table in input.tables:
+            df = pd.read_csv(table, sep="\t", header=0)
+            concat.append(df)
+        concat = pd.concat(concat, axis=0, ignore_index=False)
+        concat.sort_values(["ref", "sample"], inplace=True)
+        concat.to_csv(output.table, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_self_overlaps:
     input:
         tsv_self = expand(
@@ -367,4 +409,5 @@ rule run_all_self_overlaps:
         tsv_umbrella = expand(
             rules.aggregate_umbrella_errors.output.tsv,
             ref=list(MODULE_REF_GENOMES.keys())
-        )
+        ),
+        split_err = rules.merge_agg_split_errors_by_umbrella.output.table
