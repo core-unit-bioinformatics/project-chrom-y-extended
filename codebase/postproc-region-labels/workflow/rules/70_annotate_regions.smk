@@ -534,7 +534,7 @@ rule reheader_disintegrated_qc_annotation:
     run:
         import pandas as pd
         header_annot = open(input.annot).readline().strip().strip("#").split()
-        header_qc_labels = open(input.qc_header).readline().strip().strip("#").split()
+        header_qc_labels = open(input.qc_header).readline().strip().strip("#").split(",")
 
         out_header = header_annot + header_qc_labels + ["overlap_bp"]
         assert len(set(out_header)) == len(out_header)
