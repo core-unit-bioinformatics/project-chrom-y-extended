@@ -80,7 +80,7 @@ def main():
             if "," in stat_label:
                 if name == "TELO" and start < int(2.5e6):
                     stat_label = "TELOp"
-                elif name == "TELO" and start > int(4e7):
+                elif name == "TELO" and start > int(1e7):
                     stat_label = "TELOq"
                 else:
                     raise ValueError(seq, name, stat_label)
