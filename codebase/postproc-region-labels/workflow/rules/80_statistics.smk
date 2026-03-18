@@ -399,6 +399,8 @@ rule merge_agg_split_errors_by_umbrella:
 # for updated version of fig 1 err panel
 # intersect final regions w/ stitched umbrella
 rule intersect_final_regions_with_stitched_umbrella:
+    """forgot to add the # in the header line of the stitched file
+    """
     input:
         final = rules.add_gap_fillers_to_annotation.output.bed,
         stitched = rules.simplify_umbrella_region_labels.output.stitched
@@ -411,7 +413,7 @@ rule intersect_final_regions_with_stitched_umbrella:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "bedtools intersect -wo -a {input.stitched} -b {input.final} > {output.isect}"
+        "grep -v start {input.stitched} | bedtools intersect -wo -a /dev/stdin -b {input.final} > {output.isect}"
 
 
 rule run_all_self_overlaps:
