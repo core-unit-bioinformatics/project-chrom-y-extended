@@ -396,6 +396,24 @@ rule merge_agg_split_errors_by_umbrella:
     # END OF RUN BLOCK
 
 
+# for updated version of fig 1 err panel
+# intersect final regions w/ stitched umbrella
+rule intersect_final_regions_with_stitched_umbrella:
+    input:
+        final = rules.add_gap_fillers_to_annotation.output.bed,
+        stitched = rules.simplify_umbrella_region_labels.output.stitched
+    output:
+        isect = SUB_WD.joinpath(
+            "suppl", "isect_stitched_final", "{sample}.{ref}.stitched-final-isect.tsv"
+        )
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
+    shell:
+        "bedtools intersect -wo -a {input.stitched} -b {input.final} > {output.isect}"
+
+
 rule run_all_self_overlaps:
     input:
         tsv_self = expand(
@@ -408,6 +426,11 @@ rule run_all_self_overlaps:
         ),
         tsv_umbrella = expand(
             rules.aggregate_umbrella_errors.output.tsv,
+            ref=list(MODULE_REF_GENOMES.keys())
+        ),
+        tsv_stitched = expand(
+            rules.intersect_final_regions_with_stitched_umbrella.output.isect,
+            sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
         split_err = rules.merge_agg_split_errors_by_umbrella.output.table
