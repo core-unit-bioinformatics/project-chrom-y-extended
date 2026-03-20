@@ -179,12 +179,9 @@ def main():
 
     # sanity checking
     data_labels = set(merged.index.get_level_values("label"))
-    umbrella_labels = set(umbrellas.keys())
+    umbrella_labels = set(d["unified"] for d in umbrellas.values())
+    umbrella_labels.add("TELO")
     unknowns = data_labels - umbrella_labels
-    # manual fix for the known problematic cases
-    # for OTHER: see function above 'load_isect_table'
-    annoying_cases = set(["DYZ19", "CEN-DYZ3", "OTHER"])
-    unknowns -= annoying_cases
     assert len(unknowns) == 0, unknowns
 
     args.output.parent.mkdir(exist_ok=True, parents=True)
