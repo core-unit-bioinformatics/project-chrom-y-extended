@@ -416,6 +416,50 @@ rule intersect_final_regions_with_stitched_umbrella:
         "grep -v start {input.stitched} | bedtools intersect -wo -a /dev/stdin -b {input.final} > {output.isect}"
 
 
+localrules: agg_errors_over_stitched_regions
+rule agg_errors_over_stitched_regions:
+    input:
+        isect_tsv = rules.intersect_final_regions_with_stitched_umbrella.output.isect,
+        umbrella = rules.determine_umbrella_label_matchings.output.rename_smp
+    output:
+        agg_tsv = SUB_WD.joinpath(
+            "results", "agg_err_stitched", "{ref}",
+            "{sample}.{ref}.agg-err-stitched.tsv"
+        )
+    params:
+        script=PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "agg_errors_stitched.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} -i {input.isect_tsv} -u {input.umbrella} -o {output.agg_tsv}"
+
+
+localrules: merge_agg_errors_over_stitched
+rule merge_agg_errors_over_stitched:
+    input:
+        agg_tables = expand(
+            rules.agg_errors_over_stitched_regions.output.agg_tsv,
+            sample=SAMPLES,
+            ref=list(MODULE_REF_GENOMES.keys())
+        )
+    output:
+        table = SUB_WD.joinpath(
+            "results", "agg_err_stitched", "all-mrg.errors-stitched.tsv"
+        )
+    run:
+        import pandas as pd
+
+        merged = []
+        for table_file in input.agg_tables:
+            df = pd.read_csv(table_file, sep="\t", header=0)
+            merged.append(df)
+        merged = pd.concat(merged, axis=0, ignore_index=False)
+        merged.sort_values(["ref", "sample", "seqtype", "label", "other", "statistic"], inplace=True)
+        merged.to_csv(output.table, sep="\t", header=True, index=False)
+    # END OF RUN BLOCK
+
+
 rule run_all_self_overlaps:
     input:
         tsv_self = expand(
@@ -435,4 +479,5 @@ rule run_all_self_overlaps:
             sample=SAMPLES,
             ref=list(MODULE_REF_GENOMES.keys())
         ),
-        split_err = rules.merge_agg_split_errors_by_umbrella.output.table
+        split_err = rules.merge_agg_split_errors_by_umbrella.output.table,
+        stitched_err = rules.merge_agg_errors_over_stitched.output.table
