@@ -43,6 +43,11 @@ def parse_command_line():
         type=lambda fp: pl.Path(fp).resolve(strict=True),
         dest="umbrella"
     )
+    parser.add_argument(
+        "-o", "--output",
+        type=lambda fp: pl.Path(fp).resolve(strict=False),
+        dest="output"
+    )
 
     args = parser.parse_args()
 
@@ -171,12 +176,19 @@ def main():
     midx = pd.MultiIndex.from_tuples([t[0] for t in merged], names=["ref", "sample", "seqtype", "label", "other", "statistic"])
     merged = pd.DataFrame.from_records(merged, index=midx, columns=["tidx", "value"])
     merged.drop("tidx", axis=1, inplace=True)
-    print(merged.columns)
-    print(merged)
-    raise
 
+    # sanity checking
+    data_labels = set(merged.index.get_level_values("label"))
+    umbrella_labels = set(umbrellas.keys())
+    unknowns = data_labels - umbrella_labels
+    # manual fix for the known problematic cases
+    # for OTHER: see function above 'load_isect_table'
+    annoying_cases = set(["DYZ19", "CEN-DYZ3", "OTHER"])
+    unknowns -= annoying_cases
+    assert len(unknowns) == 0, unknowns
 
-
+    args.output.parent.mkdir(exist_ok=True, parents=True)
+    merged.to_csv(args.output, sep="\t", index=True, header=True)
 
     return 0
 
