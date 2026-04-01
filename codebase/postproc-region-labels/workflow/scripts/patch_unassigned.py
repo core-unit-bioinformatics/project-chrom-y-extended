@@ -151,7 +151,15 @@ def patch_regions(regions, ref_umbrellas, ref_unified, patch_umbrellas):
             # 2026-04-01
             # change requested by Arang Rhie
             group = "SAT"
-        assert unified in ref_unified, unified
+        try:
+            assert unified in ref_unified, unified
+        except AssertionError:
+            if unified == "AMPL1" and "AMPL1_IR3d" in ref_unified:
+                unified = "AMPL1_IR3d"
+            elif unified == "AMPL1_IR3d" and "AMPL1" in ref_unified:
+                unified = "AMPL1"
+            else:
+                raise
 
         region = (
             row.seq_ref, start, end, unified,
