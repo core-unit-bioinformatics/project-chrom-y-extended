@@ -37,9 +37,10 @@ rule determine_umbrella_label_matchings:
 
 rule intersect_reference_labelings:
     """Decision chrY call 2026-03-31
-    Merge both reference labelings for the umbrella
-    terms to (ideally) close some of the unassigned
-    regions by simple union.
+    Use the respective other reference to patch
+    'unassigned' regions in the umbrella label space.
+    In the post-processing, this will also stitch
+    together regions over issues.
     """
     input:
         ref_hg38 = expand(
@@ -53,11 +54,46 @@ rule intersect_reference_labelings:
             allow_missing=True
         )
     output:
-        isect = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.uniref.chrY-regions.isect.tsv")
+        isect_hg38 = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.hg38-t2tv2.chrY-regions.isect.tsv"),
+        isect_t2tv2 = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.t2tv2-hg38.chrY-regions.isect.tsv")
     conda:
         GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    resources:
+        mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "bedtools intersect -wao -a {input.ref_t2t} -b {input.ref_hg38} > {output.isect}"
+        "bedtools intersect -wao -a {input.ref_t2t} -b {input.ref_hg38} > {output.isect_t2tv2}"
+            " && "
+        "bedtools intersect -wao -a {input.ref_hg38} -b {input.ref_t2tv2} > {output.isect_hg38}"
+
+
+localrules: patch_unassigned_regions
+rule patch_unassigned_regions:
+    input:
+        isect = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.{ref}-{patch_ref}.chrY-regions.isect.tsv"),
+        umbrella_ref = lambda wildcards: expand(
+            rules.determine_umbrella_label_matchings.output.rename_smp,
+            ref=wildcards.ref,
+            allow_missing=True
+        ),
+        umbrella_patch = lambda wildcards: expand(
+            rules.determine_umbrella_label_matchings.output.rename_smp,
+            ref=wildcards.patch_ref,
+            allow_missing=True
+        ),
+        seq_sizes = rules.dump_genome_seq_sizes.output.tsv
+    output:
+        bed = SUB_WD.joinpath(
+            "results", "seq_annotation", "{ref}",
+            "{sample}.{ref}.chrY-regions.{patch_ref}-patched.bed"),
+    params:
+        script = PROJECT_REPO_ROOT.joinpath(
+            "codebase", "postproc-region-labels", "workflow",
+            "scripts", "patch_unassign.py"
+        ).resolve(strict=True)
+    shell:
+        "{params.script} -i {input.isect} -s {input.seq_sizes} "
+        "-r {input.umbrella_ref} -p {input.umbrella_patch} "
+        "-o {output}"
 
 
 localrules: simplify_umbrella_region_labels
@@ -96,7 +132,17 @@ rule run_all_umbrella_computations:
             ref=list(MODULE_REF_GENOMES.keys()),
             sample=SAMPLES
         ),
-        uniref = expand(
-            rules.intersect_reference_labelings.output,
-            sample=SAMPLES
-        )
+        hg38_ref = expand(
+            rules.patch_unassigned_regions.output.bed,
+            sample=SAMPLES,
+            ref=["hg38"],
+            patch_ref=["t2tv2"]
+        ),
+        t2tv2_ref = expand(
+            rules.patch_unassigned_regions.output.bed,
+            sample=SAMPLES,
+            ref=["t2tv2"],
+            patch_ref=["hg38"]
+        ),
+
+
