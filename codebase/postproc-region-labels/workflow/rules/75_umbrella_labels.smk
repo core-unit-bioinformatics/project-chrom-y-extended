@@ -35,6 +35,31 @@ rule determine_umbrella_label_matchings:
         "--ref-out {output.rename_ref} --output {output.rename_smp}"
 
 
+rule intersect_reference_labelings:
+    """Decision chrY call 2026-03-31
+    Merge both reference labelings for the umbrella
+    terms to (ideally) close some of the unassigned
+    regions by simple union.
+    """
+    input:
+        ref_hg38 = expand(
+            rules.add_gap_fillers_to_annotation.output.bed,
+            ref="hg38",
+            allow_missing=True
+        ),
+        ref_t2t = expand(
+            rules.add_gap_fillers_to_annotation.output.bed,
+            ref="t2tv2",
+            allow_missing=True
+        )
+    output:
+        isect = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.uniref.chrY-regions.isect.tsv")
+    conda:
+        GLOBAL_CONDA_ENVS.joinpath("seqtools.yaml")
+    shell:
+        "bedtools intersect -wao -a {input.ref_t2t} -b {input.ref_hg38} > {output.isect}"
+
+
 localrules: simplify_umbrella_region_labels
 rule simplify_umbrella_region_labels:
     input:
@@ -69,5 +94,9 @@ rule run_all_umbrella_computations:
         merged = expand(
             rules.simplify_umbrella_region_labels.output,
             ref=list(MODULE_REF_GENOMES.keys()),
+            sample=SAMPLES
+        ),
+        uniref = expand(
+            rules.intersect_reference_labelings.output,
             sample=SAMPLES
         )
