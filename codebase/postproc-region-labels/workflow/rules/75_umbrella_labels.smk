@@ -88,7 +88,7 @@ rule patch_unassigned_regions:
     params:
         script = PROJECT_REPO_ROOT.joinpath(
             "codebase", "postproc-region-labels", "workflow",
-            "scripts", "patch_unassign.py"
+            "scripts", "patch_unassigned.py"
         ).resolve(strict=True)
     shell:
         "{params.script} -i {input.isect} -s {input.seq_sizes} "
