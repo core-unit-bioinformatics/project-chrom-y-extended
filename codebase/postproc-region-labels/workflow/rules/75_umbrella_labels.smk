@@ -48,7 +48,7 @@ rule intersect_reference_labelings:
             ref="hg38",
             allow_missing=True
         ),
-        ref_t2t = expand(
+        ref_t2tv2 = expand(
             rules.add_gap_fillers_to_annotation.output.bed,
             ref="t2tv2",
             allow_missing=True
@@ -61,7 +61,7 @@ rule intersect_reference_labelings:
     resources:
         mem_mb=lambda wildcards, attempt: 2048 * attempt
     shell:
-        "bedtools intersect -wao -a {input.ref_t2t} -b {input.ref_hg38} > {output.isect_t2tv2}"
+        "bedtools intersect -wao -a {input.ref_t2tv2} -b {input.ref_hg38} > {output.isect_t2tv2}"
             " && "
         "bedtools intersect -wao -a {input.ref_hg38} -b {input.ref_t2tv2} > {output.isect_hg38}"
 
