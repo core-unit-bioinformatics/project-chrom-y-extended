@@ -158,6 +158,9 @@ def patch_regions(regions, ref_umbrellas, ref_unified, patch_umbrellas):
                 unified = "AMPL1_IR3d"
             elif unified == "AMPL1_IR3d" and "AMPL1" in ref_unified:
                 unified = "AMPL1"
+            elif unified == "OTHER" and row.start_ref > int(20e6):
+                unified = "other2"
+                assert unified in ref_unified, "remap failed"
             else:
                 raise
 
