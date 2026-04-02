@@ -296,7 +296,8 @@ def disjoin_regions(current_region, next_region, added_labels):
             elif size_current > FRAGMENT_THRESHOLD and size_next > FRAGMENT_THRESHOLD:
                 pass
             else:
-                raise RuntimeError(f"Both fragmented: {current_region} / {next_region}")
+                print(f"Both regions are fragments - skipping: {current_region} / {next_region}")
+                return None, None
 
             if current_contained and not next_contained:
                 print(f"Keeping CUR unchanged: {current_region}")
@@ -384,11 +385,13 @@ def extend_regions(current_region, next_region):
         print(f"Extending PAR1: {next_region}")
         # extend PAR1 backwards to TELOp
         next_region[1] = current_region[2]
+        print(f"Extending PAR1 / ext: {next_region}")
     elif current_region[3] == "PAR2":
         assert next_region == "TELOq"
         print(f"Extending PAR2: {current_region}")
         # extend PAR2 forward to TELOq
         current_region[2] = next_region[1]
+        print(f"Extending PAR2 / ext: {current_region}")
     else:
         print("Extend pass")
         pass
@@ -497,14 +500,16 @@ def stitch_up_label_regions(label_regions, seq_sizes):
             continue
         if current_region[2] > next_region[1]:
             current_region, next_region = disjoin_regions(list(current_region), list(next_region), added_labels)
-            if current_region is None:
+            if current_region is None and next_region is not None:
                 print("Skipping over current")
-                assert next_region is not None
                 current_region = next_region
-            elif next_region is None:
+            elif next_region is None and current_region is not None:
                 print("skipping over next")
-                assert current_region is not None
                 pass
+            elif current_region is None and next_region is None:
+                current_region = final_regions.pop()
+                print(f"Rewinding by one - current: {current_region}")
+                continue
             else:
                 # both are not None, have been disjoined
                 final_regions.append(current_region)
