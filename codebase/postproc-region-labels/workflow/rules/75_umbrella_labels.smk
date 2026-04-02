@@ -84,7 +84,13 @@ rule patch_unassigned_regions:
     output:
         bed = SUB_WD.joinpath(
             "results", "seq_annotation", "{ref}",
-            "{sample}.{ref}.chrY-regions.{patch_ref}-patched.bed"),
+            "{sample}.{ref}.chrY-regions.{patch_ref}-patched.bed"
+        )
+    log:
+        txt = SUB_WD.joinpath(
+            "results", "seq_annotation", "{ref}",
+            "{sample}.{ref}.chrY-regions.{patch_ref}-patched.log"
+        )
     params:
         script = PROJECT_REPO_ROOT.joinpath(
             "codebase", "postproc-region-labels", "workflow",
@@ -93,7 +99,7 @@ rule patch_unassigned_regions:
     shell:
         "{params.script} -i {input.isect} -s {input.seq_sizes} "
         "-r {input.umbrella_ref} -p {input.umbrella_patch} "
-        "-o {output}"
+        "-o {output} &> {log.txt}"
 
 
 localrules: simplify_umbrella_region_labels
