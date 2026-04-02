@@ -268,22 +268,35 @@ def disjoin_regions(current_region, next_region, added_labels):
             current_region[2] = min_end
             print(f"Keeping CUR: {current_region}")
             if size_before > size_after:
-                next_region[2] = current_region[1]
-                print(f"Adapting NXT / keep before split: {next_region}")
-                assert next_region[1] < next_region[2]
-                assert next_region[2] == current_region[1]
-                return tuple(current_region), tuple(next_region)
+                # at this point, we know current to be contained, which, by sort
+                # can only mean it has the same or slightly smaller starting coordinate
+                # than next --- hence, this block here is impossible to reach
+                raise RuntimeError(f"Sort-order violation: {current_region} / {next_region}")
             else:
                 next_region[1] = current_region[2]
                 print(f"Adapting NXT / keep after split: {next_region}")
                 assert next_region[1] < next_region[2]
                 assert current_region[2] == next_region[1]
-                # NB: do NOT switch now order as opposed to above
                 return tuple(current_region), tuple(next_region)
         else:
             # both labels do not exist yet...
             # keep the contained one for sure
             print("Both labels do not exist, keeping contained region unchanged")
+
+            # check if we deal w/ fragments
+            size_current = current_region[2] - current_region[1]
+            size_next = next_region[2] - next_region[1]
+            if size_current < EXTEND_THRESHOLD and size_next > EXTEND_THRESHOLD:
+                print(f"CUR is fragment, discarding: {current_region}")
+                return tuple(next_region), None
+            elif size_current > EXTEND_THRESHOLD and size_next < EXTEND_THRESHOLD:
+                print(f"NXT is fragment, discarding: {next_region}")
+                return tuple(current_region), None
+            elif size_current > EXTEND_THRESHOLD and size_next > EXTEND_THRESHOLD:
+                pass
+            else:
+                raise RuntimeError(f"Both fragmented: {current_region} / {next_region}")
+
             if current_contained and not next_contained:
                 print(f"Keeping CUR unchanged: {current_region}")
                 size_before = current_region[1] - next_region[1]
