@@ -281,7 +281,56 @@ def disjoin_regions(current_region, next_region, added_labels):
                 # NB: do NOT switch now order as opposed to above
                 return tuple(current_region), tuple(next_region)
         else:
-            raise RuntimeError(f"Invalid runtime condition: {current_region} / {next_region}")
+            # both labels do not exist yet...
+            # keep the contained one for sure
+            print("Both labels do not exist, keeping contained region unchanged")
+            if current_contained and not next_contained:
+                print(f"Keeping CUR unchanged: {current_region}")
+                size_before = current_region[1] - next_region[1]
+                size_after = next_region[2] - current_region[2]
+                if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+                    # do not create mini regions
+                    print("Avoid fragment generation")
+                    print(f"Accepting CUR:{current_region}, dropping NXT:{next_region}")
+                    return tuple(current_region), None
+                if size_before > size_after:
+                    # impossible by sort order
+                    raise RuntimeError(f"Sort-order violation: {current_region} / {next_region}")
+                else:
+                    next_region[1] = current_region[2]
+                    print(f"Adapting NXT / keep after split: {next_region}")
+                    assert next_region[1] < next_region[2]
+                    assert current_region[2] == next_region[1]
+                    # NB: do NOT switch now order as opposed to above
+                    return tuple(current_region), tuple(next_region)
+
+            elif next_contained and not current_contained:
+                print(f"Keeping NXT unchanged: {next_region}")
+                size_before = next_region[1] - current_region[1]
+                size_after = current_region[2] - next_region[2]
+                if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+                    # do not create mini regions
+                    print("Avoid fragment generation")
+                    print(f"Dropping CUR:{current_region}, accepting NXT:{next_region}")
+                    # NB: switch order now
+                    return tuple(next_region), None
+                if size_before > size_after:
+                    current_region[2] = next_region[1]
+                    print(f"Adapting CUR / keep before split: {current_region}")
+                    assert current_region[1] < current_region[2]
+                    assert current_region[2] == next_region[1]
+                    # by sort order, still before
+                    return tuple(current_region), tuple(next_region)
+                else:
+                    current_region[1] = next_region[2]
+                    print(f"Adapting CUR / keep after split: {current_region}")
+                    assert current_region[1] < current_region[2]
+                    assert current_region[2] == next_region[1]
+                    # NB: switch order now
+                    return tuple(next_region), tuple(current_region)
+            else:
+                # both contained / full overlap...
+                raise RuntimeError(f"Invalid runtime condition: CUR:{current_region} / NXT:{next_region}")
 
     # AMPL* labels do not have priority
     if current_region[3].startswith("AMPL") and not next_region[3].startswith("AMPL"):
@@ -374,7 +423,7 @@ def stitch_up_label_regions(label_regions, seq_sizes):
             if current_region[1] < EXTEND_THRESHOLD:
                 print(
                     f"Extending region to start/0 (dist < {EXTEND_THRESHOLD}): "
-                    "{current_region}"
+                    f"{current_region}"
                 )
                 current_region[1] = 0
             if 0 < (seq_sizes[current_region[0]] - current_region[2]) < EXTEND_THRESHOLD:
