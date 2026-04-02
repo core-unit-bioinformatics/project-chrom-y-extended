@@ -19,6 +19,7 @@ HEADER += ["overlap_bp"]
 ISSUES = ["ERRBASE", "ERRSTRUCT", "NGAP", "UNASSIGNED"]
 
 EXTEND_THRESHOLD = 1000
+FRAGMENT_THRESHOLD = int(EXTEND_THRESHOLD * 10)
 
 
 def parse_command_line():
@@ -226,7 +227,7 @@ def disjoin_regions(current_region, next_region, added_labels):
 
             size_before = next_region[1] - current_region[1]
             size_after = current_region[2] - next_region[2]
-            if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+            if size_before < FRAGMENT_THRESHOLD and size_after < FRAGMENT_THRESHOLD:
                 # do not create mini regions
                 print("Avoid fragment generation")
                 print(f"Dropping existing CUR:{current_region}, accepting NXT:{next_region}")
@@ -236,14 +237,14 @@ def disjoin_regions(current_region, next_region, added_labels):
             next_region[2] = min_end
             print(f"Keeping NXT: {next_region}")
             if size_before > size_after:
-                current_region[2] = next_region[1]
                 print(f"Adapting CUR / keep before split: {current_region}")
+                current_region[2] = next_region[1]
                 assert current_region[1] < current_region[2]
                 assert current_region[2] == next_region[1]
                 return tuple(current_region), tuple(next_region)
             else:
-                current_region[1] = next_region[2]
                 print(f"Adapting CUR / keep after split: {current_region}")
+                current_region[1] = next_region[2]
                 assert current_region[1] < current_region[2]
                 assert next_region[2] == current_region[1]
                 # NB: switch now order
@@ -258,7 +259,7 @@ def disjoin_regions(current_region, next_region, added_labels):
 
             size_before = current_region[1] - next_region[1]
             size_after = next_region[2] - current_region[2]
-            if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+            if size_before < FRAGMENT_THRESHOLD and size_after < FRAGMENT_THRESHOLD:
                 # do not create mini regions
                 print("Avoid fragment generation")
                 print(f"Accepting CUR:{current_region}, dropping existing NXT:{next_region}")
@@ -273,8 +274,8 @@ def disjoin_regions(current_region, next_region, added_labels):
                 # than next --- hence, this block here is impossible to reach
                 raise RuntimeError(f"Sort-order violation: {current_region} / {next_region}")
             else:
-                next_region[1] = current_region[2]
                 print(f"Adapting NXT / keep after split: {next_region}")
+                next_region[1] = current_region[2]
                 assert next_region[1] < next_region[2]
                 assert current_region[2] == next_region[1]
                 return tuple(current_region), tuple(next_region)
@@ -286,13 +287,13 @@ def disjoin_regions(current_region, next_region, added_labels):
             # check if we deal w/ fragments
             size_current = current_region[2] - current_region[1]
             size_next = next_region[2] - next_region[1]
-            if size_current < EXTEND_THRESHOLD and size_next > EXTEND_THRESHOLD:
+            if size_current < FRAGMENT_THRESHOLD and size_next > FRAGMENT_THRESHOLD:
                 print(f"CUR is fragment, discarding: {current_region}")
                 return tuple(next_region), None
-            elif size_current > EXTEND_THRESHOLD and size_next < EXTEND_THRESHOLD:
+            elif size_current > FRAGMENT_THRESHOLD and size_next < FRAGMENT_THRESHOLD:
                 print(f"NXT is fragment, discarding: {next_region}")
                 return tuple(current_region), None
-            elif size_current > EXTEND_THRESHOLD and size_next > EXTEND_THRESHOLD:
+            elif size_current > FRAGMENT_THRESHOLD and size_next > FRAGMENT_THRESHOLD:
                 pass
             else:
                 raise RuntimeError(f"Both fragmented: {current_region} / {next_region}")
@@ -301,7 +302,7 @@ def disjoin_regions(current_region, next_region, added_labels):
                 print(f"Keeping CUR unchanged: {current_region}")
                 size_before = current_region[1] - next_region[1]
                 size_after = next_region[2] - current_region[2]
-                if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+                if size_before < FRAGMENT_THRESHOLD and size_after < FRAGMENT_THRESHOLD:
                     # do not create mini regions
                     print("Avoid fragment generation")
                     print(f"Accepting CUR:{current_region}, dropping NXT:{next_region}")
@@ -310,8 +311,8 @@ def disjoin_regions(current_region, next_region, added_labels):
                     # impossible by sort order
                     raise RuntimeError(f"Sort-order violation: {current_region} / {next_region}")
                 else:
-                    next_region[1] = current_region[2]
                     print(f"Adapting NXT / keep after split: {next_region}")
+                    next_region[1] = current_region[2]
                     assert next_region[1] < next_region[2]
                     assert current_region[2] == next_region[1]
                     # NB: do NOT switch now order as opposed to above
@@ -321,22 +322,22 @@ def disjoin_regions(current_region, next_region, added_labels):
                 print(f"Keeping NXT unchanged: {next_region}")
                 size_before = next_region[1] - current_region[1]
                 size_after = current_region[2] - next_region[2]
-                if size_before < EXTEND_THRESHOLD and size_after < EXTEND_THRESHOLD:
+                if size_before < FRAGMENT_THRESHOLD and size_after < FRAGMENT_THRESHOLD:
                     # do not create mini regions
                     print("Avoid fragment generation")
                     print(f"Dropping CUR:{current_region}, accepting NXT:{next_region}")
                     # NB: switch order now
                     return tuple(next_region), None
                 if size_before > size_after:
+                    print(f"Adapting CUR / keep before split: {size_before} of {current_region}")
                     current_region[2] = next_region[1]
-                    print(f"Adapting CUR / keep before split: {current_region}")
                     assert current_region[1] < current_region[2]
                     assert current_region[2] == next_region[1]
                     # by sort order, still before
                     return tuple(current_region), tuple(next_region)
                 else:
+                    print(f"Adapting CUR / keep after split: {size_after} of {current_region}")
                     current_region[1] = next_region[2]
-                    print(f"Adapting CUR / keep after split: {current_region}")
                     assert current_region[1] < current_region[2]
                     assert current_region[2] == next_region[1]
                     # NB: switch order now
@@ -419,6 +420,17 @@ def stitch_up_label_regions(label_regions, seq_sizes):
 
     final_regions = []
     current_region = label_regions.popleft()
+
+    # check if current is PAR1 already
+    if current_region[3] == "PAR1":
+        # start w/o TELOp
+        print(
+            f"Extending PAR1 to start (no prev TELOp): {current_region}"
+        )
+        current_region = list(current_region)
+        current_region[1] = 0
+        current_region = tuple(current_region)
+
     # 0 - seq
     # 1 - start /  2 - end
     # 3 - label(name)
@@ -457,9 +469,9 @@ def stitch_up_label_regions(label_regions, seq_sizes):
 
             next_region = list(next_region)
             if next_region[3] == "PAR1":
+                # very unlikely to happen here
                 print(
-                    f"Extending PAR1 to start (no prev TELOp): "
-                    f"{current_region} / {seq_sizes[current_region[0]]}"
+                    f"Extending PAR1 to start (no prev TELOp): {current_region}"
                 )
                 # begin w/o TELOp
                 next_region[1] = 0
