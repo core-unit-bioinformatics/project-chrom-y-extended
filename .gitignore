@@ -214,3 +214,12 @@ backup/
 
 # Ignore all paths containing the keyword *cache*
 *cache*
+
+# ====================
+# gitignore entries
+# ruff
+# ====================
+
+# also captured via above, but
+# explicit is better than implicit
+.ruff_cache/

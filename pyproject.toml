@@ -1,6 +1,6 @@
 [cubi.metadata]
 pid = "https://github.com/core-unit-bioinformatics/template-metadata-files"
-version = "1.6.1"
+version = "1.8.0"
 
 [cubi.project]
 pid = "https://git.hhu.de/cubi/chrom-y-extended"
@@ -8,6 +8,7 @@ name = "chrom-y-extended"
 start_date = 2025-01-17
 end_data = 2099-12-31
 version = "optional"
+type = "type"
 
 [tool.black]
 line-length = 88
@@ -15,8 +16,28 @@ line-length = 88
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.snakefmt]
+line_length = 88
+include = "\\.smk$|^Snakefile"
+
 [tool.pylint.format]
 max-line-length = "88"
 
 [tool.pylint.messages_control]
 disable = [ "logging-fstring-interpolation", "useless-return", "missing-module-docstring",]
+
+[tool.ruff.format]
+line-ending = "lf"
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+select = [ "E", "F", "B", "I", "UP",]
+ignore = []
+unfixable = [ "B",]
