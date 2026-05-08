@@ -2,6 +2,19 @@
 
 ## Relevant notebooks for manuscript content
 
+### ChrY sequence class annotation
+
+For 'umbrella terms' / major sequence classes:
+
+```
+codebase/postproc-region-labels/workflow/rules/75_umbrella_labels.smk::patch_unassigned_regions
+```
+
+The above files include class-assignments for the base-level and structural errors as well as N-gaps.
+
+
+### Notebooks for plots / tables
+
 ```
 # panel main fig. 1
 codebase/plotting/notebooks/region-overlap-stats/issue-by-group.ipynb

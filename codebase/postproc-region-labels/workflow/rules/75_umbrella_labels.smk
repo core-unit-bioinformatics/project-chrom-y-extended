@@ -68,6 +68,11 @@ rule intersect_reference_labelings:
 
 localrules: patch_unassigned_regions
 rule patch_unassigned_regions:
+    """This rule produces the Y sequence class region annotation
+    that should be used for any descriptive statistic or downstream
+    analysis if only the 'umbrella terms' (major sequence classes)
+    are required.
+    """
     input:
         isect = SUB_WD.joinpath("suppl", "ref_label_isect", "{sample}.{ref}-{patch_ref}.chrY-regions.isect.tsv"),
         umbrella_ref = lambda wildcards: expand(
