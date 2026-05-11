@@ -19,10 +19,12 @@ The above files include class-assignments for the base-level and structural erro
 # panel main fig. 1
 codebase/plotting/notebooks/region-overlap-stats/issue-by-group.ipynb
 
-codebase/plotting/notebooks/seqclass_stats/y-seqclass-boxplot.ipynb
-
 # supp. figures
 codebase/plotting/notebooks/region-overlap-stats/region-errors.ipynb
+
+codebase/plotting/notebooks/seqclass_stats/y-seqclass-boxplot.ipynb
+
+codebase/plotting/notebooks/region-overlap-stats/errors-over-stitched.ipynb
 
 # numbers
 ## error rates
