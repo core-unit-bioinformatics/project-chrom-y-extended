@@ -1,5 +1,25 @@
 # Project: Chromosome Y extended
 
+
+## Please cite
+
+### Publication
+
+(under review, please cite the preprint below for the time being)
+
+
+### Preprint
+
+```
+
+Population-scale Y chromosome assemblies reveal recurrent remodeling within constrained architectures
+
+Hallast, Rhie, Loftus et al., bioRxiv 2026
+
+https://doi.org/10.64898/2026.06.03.729890
+
+```
+
 ## Relevant notebooks for manuscript content
 
 ### ChrY sequence class annotation
